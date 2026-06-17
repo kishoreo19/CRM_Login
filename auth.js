@@ -61,7 +61,7 @@ router.post('/login', async (req, res) => {
       redirect:   roleRedirects[user.role] || 'crm.html',
     });
   } catch (err) {
-    console.error('Login error:', err.message);
+    console.error('Login error Full:', err);
     res.status(500).json({ success: false, error: 'Login failed. Please try again.' });
   }
 });
