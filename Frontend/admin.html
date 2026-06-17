@@ -1,0 +1,2216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
+<title>The JobSync — Admin Dashboard</title>
+<style>
+:root {
+  --teal:#1F9A94;--teal-dark:#178a84;--teal-light:#e4f5f4;
+  --dark-blue:#162E5A;--mid-blue:#1a5276;
+  --gold:#d4a017;--gold-light:#fff8e6;
+  --bg-page:#eef2f7;--bg-white:#ffffff;--bg-input:#f8fafc;--bg-role:#f4f7fb;
+  --text-head:#162E5A;--text-tag:#4a6080;--text-btn:#6b7a99;
+  --text-inp:#2d3748;--text-muted:#aab4c4;--text-label:#4a5568;
+  --border-btn:#d0d8e4;--border-inp:#dce3ed;--border-div:#e4eaf2;
+  --err:#c0392b;--err-bdr:#e74c3c;--err-bg:#fde8e8;
+  --suc:#1a7a40;--suc-bdr:#27ae60;--suc-bg:#e6f9ed;
+  --sidebar-w:260px;--nav-h:64px;--radius:10px;
+  --shadow:0 2px 14px rgba(22,46,90,.08);
+  --shadow-md:0 4px 24px rgba(22,46,90,.13);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'DM Sans',Arial,sans-serif;color:var(--text-inp);}
+button,input,select,textarea{font-family:'DM Sans',Arial,sans-serif;}
+button{cursor:pointer;}
+#dash-inner{display:flex;height:100vh;overflow:hidden;}
+
+/* SIDEBAR */
+#sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--dark-blue);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;}
+.sb-brand{background:#fff;border-bottom:2px solid #e2e8f0;display:flex;align-items:center;gap:10px;padding:14px 16px;flex-shrink:0;}
+.sb-name{font-family:'Cinzel',serif;font-weight:700;letter-spacing:1.5px;font-size:14px;color:#162E5A;}
+.sb-admin-badge{background:linear-gradient(135deg,#d4a017,#b8860b);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:1px;text-transform:uppercase;margin-left:auto;}
+.sb-group{padding:10px 0 4px;}
+.sb-group-label{font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:rgba(255,255,255,.35);padding:0 16px 6px;}
+.sb-item{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;color:#fff;font-size:13px;font-weight:600;border-left:3px solid transparent;user-select:none;transition:background .15s;}
+.sb-item:hover{background:rgba(255,255,255,.08);}
+.sb-item.active{background:rgba(31,154,148,.22);border-left-color:var(--teal);}
+.sb-item svg{width:15px;height:15px;flex-shrink:0;opacity:.9;}
+.sb-dropdown-toggle{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;cursor:pointer;color:#fff;font-size:13px;font-weight:600;border-left:3px solid transparent;user-select:none;transition:background .15s;}
+.sb-dropdown-toggle:hover{background:rgba(255,255,255,.08);}
+.sb-dropdown-toggle.open{background:rgba(255,255,255,.06);border-left-color:var(--teal);}
+.sb-dropdown-left{display:flex;align-items:center;gap:10px;}
+.sb-dropdown-left .icon{width:15px;height:15px;flex-shrink:0;opacity:.9;}
+.sb-chevron{width:14px;height:14px;color:rgba(255,255,255,.45);transition:transform .25s ease;}
+.sb-dropdown-toggle.open .sb-chevron{transform:rotate(180deg);}
+.sb-dropdown-items{overflow:hidden;max-height:0;transition:max-height .35s ease;}
+.sb-dropdown-items.open{max-height:400px;}
+.sb-sub-item{display:flex;align-items:center;gap:10px;padding:10px 16px 10px 24px;cursor:pointer;color:rgba(255,255,255,.75);font-size:12.5px;font-weight:600;border-left:3px solid transparent;user-select:none;transition:background .15s;}
+.sb-sub-item:hover{background:rgba(255,255,255,.07);color:#fff;}
+.sb-sub-item.active{background:rgba(31,154,148,.18);color:#fff;border-left-color:var(--teal);}
+.sb-sub-item svg{width:13px;height:13px;flex-shrink:0;}
+.sb-sub-cnt{margin-left:auto;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;min-width:22px;text-align:center;background:rgba(255,255,255,.12);color:rgba(255,255,255,.8);}
+.sb-footer{padding:14px 16px;border-top:1px solid rgba(255,255,255,.1);flex-shrink:0;}
+.sb-user-pill{display:flex;align-items:center;gap:10px;background:rgba(212,160,23,.15);border:1px solid rgba(212,160,23,.3);border-radius:10px;padding:10px 12px;}
+.sb-user-ava{width:34px;height:34px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid rgba(255,255,255,.4);background:#ffffff;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;}
+.sb-user-ava img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;}
+
+/* MAIN */
+#main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+#topbar{min-height:var(--nav-h);background:var(--bg-white);border-bottom:1px solid var(--border-div);display:flex;align-items:center;padding:0 24px;gap:14px;box-shadow:0 1px 6px rgba(22,46,90,.06);flex-shrink:0;}
+.tb-left{flex:1;display:flex;flex-direction:column;gap:2px;}
+.tb-greeting{font-size:16px;font-weight:700;color:var(--dark-blue);}
+.tb-greeting span{color:var(--gold);}
+.tb-datetime{font-size:11.5px;color:var(--text-muted);font-weight:500;}
+.tb-right{display:flex;align-items:center;gap:10px;}
+.admin-badge-topbar{display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,rgba(212,160,23,.12),rgba(184,134,11,.08));border:1.5px solid rgba(212,160,23,.35);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;color:#9a6f00;}
+
+#content{flex:1;overflow-y:auto;padding:22px 24px;background:var(--bg-page);}
+.view{display:none;}
+.view.active{display:block;}
+
+/* LIVE INDICATOR */
+.live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#27ae60;animation:pulse 2s infinite;margin-right:5px;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(39,174,96,.5)}50%{box-shadow:0 0 0 5px rgba(39,174,96,0)}}
+
+/* KPI */
+.kpi-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px;}
+.kpi-big{background:linear-gradient(135deg,var(--dark-blue),var(--mid-blue));border-radius:var(--radius);padding:22px 26px;color:#fff;min-width:180px;flex:1.5;box-shadow:0 4px 24px rgba(22,46,90,.22);position:relative;overflow:hidden;}
+.kpi-big::after{content:'';position:absolute;right:-20px;top:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.05);}
+.kpi-big-lbl{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:.7;margin-bottom:6px;}
+.kpi-big-num{font-size:48px;font-weight:700;line-height:1;}
+.kpi-big-sub{font-size:11px;opacity:.52;margin-top:6px;}
+.kpi-card{background:var(--bg-white);border:1px solid var(--border-btn);border-radius:var(--radius);padding:16px 18px 14px;box-shadow:var(--shadow);flex:1;min-width:110px;}
+.kpi-c-lbl{font-size:10px;color:var(--text-tag);font-weight:700;text-transform:uppercase;letter-spacing:.9px;}
+.kpi-c-num{font-size:32px;font-weight:700;color:var(--dark-blue);margin-top:4px;line-height:1;}
+.kpi-c-sub{font-size:10px;color:var(--text-muted);margin-top:3px;}
+
+/* SECTION */
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
+.sec-ttl{font-size:18px;font-weight:700;color:var(--dark-blue);}
+.sec-sub{font-size:12px;color:var(--text-muted);margin-top:2px;}
+
+/* TABLE */
+.tbl-wrap{background:var(--bg-white);border:1px solid var(--border-btn);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:20px;}
+.tbl-scroll{overflow-x:auto;overflow-y:auto;max-height:600px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead tr{background:var(--bg-role);}
+thead{position:sticky;top:0;z-index:2;}
+th{padding:11px 13px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text-tag);border-bottom:1px solid var(--border-div);white-space:nowrap;background:var(--bg-role);}
+td{padding:11px 13px;border-bottom:1px solid var(--border-div);color:var(--text-inp);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#f9fbfd;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+.b-green{background:var(--suc-bg);color:var(--suc);}
+.b-teal{background:var(--teal-light);color:var(--teal);}
+.b-orange{background:#fff3e6;color:#b85c00;}
+.b-red{background:var(--err-bg);color:var(--err);}
+.b-blue{background:#e8eef8;color:var(--mid-blue);}
+.b-gray{background:var(--bg-role);color:var(--text-tag);}
+.b-gold{background:#fff8e6;color:#9a6f00;}
+.b-purple{background:#f0eaff;color:#6c3fc1;}
+
+/* PRESENCE CARDS */
+.presence-row{display:flex;gap:14px;margin-bottom:20px;flex-wrap:wrap;}
+.presence-card{background:var(--bg-white);border:1px solid var(--border-btn);border-radius:var(--radius);padding:16px 20px;flex:1;min-width:200px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:box-shadow .2s;}
+.presence-card:hover{box-shadow:var(--shadow-md);}
+.presence-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.presence-card.online::before{background:var(--suc-bdr);}
+.presence-card.on_break::before{background:#e67e22;}
+.presence-card.logged_out::before{background:#7f8c8d;}
+.presence-card.not_logged_in::before{background:var(--err-bdr);}
+.pc-ava{width:46px;height:46px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid var(--border-btn);background:linear-gradient(135deg,var(--teal),var(--mid-blue));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;}
+.pc-ava img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;}
+.pc-role{font-size:10px;color:var(--text-muted);font-weight:600;letter-spacing:.5px;text-transform:uppercase;}
+.pc-name{font-size:14px;font-weight:700;color:var(--dark-blue);margin-top:2px;}
+.pc-status{display:flex;align-items:center;gap:5px;margin-top:6px;font-size:12px;font-weight:600;}
+.pc-login-time{font-size:11px;color:var(--text-muted);margin-top:4px;}
+
+/* DETAIL GRID */
+.detail-2col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.detail-card{background:var(--bg-white);border:1px solid var(--border-btn);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);}
+.detail-card-title{font-size:14px;font-weight:700;color:var(--dark-blue);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.stat-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-div);}
+.stat-row:last-child{border-bottom:none;}
+.stat-lbl{font-size:12px;color:var(--text-tag);}
+.stat-val{font-size:14px;font-weight:700;color:var(--dark-blue);}
+
+/* PERF CARDS */
+.perf-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.perf-card{background:var(--bg-white);border:1px solid var(--border-btn);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);}
+.perf-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border-div);}
+.perf-ava{width:40px;height:40px;border-radius:50%;overflow:hidden;flex-shrink:0;background:linear-gradient(135deg,var(--teal),var(--mid-blue));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;}
+.perf-ava img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.perf-name{font-size:14px;font-weight:700;color:var(--dark-blue);}
+.perf-role-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;}
+.perf-num-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+.perf-num{text-align:center;}
+.perf-num-val{font-size:22px;font-weight:700;}
+.perf-num-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+.perf-tags{display:flex;gap:5px;flex-wrap:wrap;}
+
+/* TOAST */
+#toast{display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--dark-blue);color:#fff;padding:10px 22px;border-radius:24px;font-size:13px;font-weight:500;z-index:9999;box-shadow:var(--shadow-md);white-space:nowrap;}
+#toast.show{display:block;}
+#toast.ok{background:var(--suc);}
+#toast.err{background:var(--err);}
+
+.empty{text-align:center;padding:40px 24px;}
+.empty p{font-size:13px;color:var(--text-muted);}
+
+.refresh-btn{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;background:rgba(31,154,148,.1);border:1px solid rgba(31,154,148,.25);color:var(--teal);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
+.refresh-btn:hover{background:rgba(31,154,148,.2);}
+.last-refresh{font-size:11px;color:var(--text-muted);}
+
+.dot-online{display:inline-block;width:8px;height:8px;border-radius:50%;background:#27ae60;animation:pulse 2s infinite;flex-shrink:0;}
+.dot-break{display:inline-block;width:8px;height:8px;border-radius:50%;background:#e67e22;animation:pulse 2s infinite;flex-shrink:0;}
+.dot-logout{display:inline-block;width:8px;height:8px;border-radius:50%;background:#7f8c8d;flex-shrink:0;}
+.dot-offline{display:inline-block;width:8px;height:8px;border-radius:50%;background:#e74c3c;flex-shrink:0;}
+
+/* RANGE ASSIGN MODAL */
+#range-assign-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1500;align-items:center;justify-content:center;}
+#range-assign-overlay.open{display:flex;}
+
+/* EXCEL PREVIEW MODAL */
+#excel-preview-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;align-items:center;justify-content:center;}
+#excel-preview-overlay.open{display:flex;}
+#excel-preview-box{background:#fff;border-radius:14px;width:96vw;max-width:1200px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 12px 48px rgba(22,46,90,.22);overflow:hidden;}
+#excel-preview-header{padding:18px 24px;border-bottom:1px solid var(--border-div);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--bg-role);}
+#excel-preview-title{font-size:15px;font-weight:700;color:var(--dark-blue);}
+#excel-preview-subtitle{font-size:12px;color:var(--text-muted);margin-top:2px;}
+#excel-preview-table-wrap{flex:1;overflow:auto;}
+#excel-preview-table-wrap table{font-size:12px;}
+#excel-preview-table-wrap th{font-size:10px;padding:9px 11px;white-space:nowrap;}
+#excel-preview-table-wrap td{padding:8px 11px;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;}
+#excel-preview-footer{padding:14px 24px;border-top:1px solid var(--border-div);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:#fff;gap:12px;flex-wrap:wrap;}
+.excel-stats{display:flex;gap:14px;flex-wrap:wrap;}
+.excel-stat{font-size:12px;color:var(--text-tag);font-weight:600;}
+.excel-stat span{color:var(--dark-blue);font-weight:700;}
+
+#upload-progress-bar-wrap{display:none;background:var(--teal-light);border:1px solid var(--teal);border-radius:8px;padding:10px 16px;margin:0 24px 10px;}
+.progress-bar-bg{height:8px;background:#d0ede8;border-radius:4px;overflow:hidden;margin-top:6px;}
+.progress-bar-fill{height:100%;background:var(--teal);border-radius:4px;transition:width .2s;}
+
+/* CHART / DOWNLOAD MODAL */
+#chart-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:3000;align-items:center;justify-content:center;}
+#chart-modal-overlay.open{display:flex;}
+#chart-modal-box{background:#fff;border-radius:14px;width:800px;max-width:96vw;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 16px 60px rgba(22,46,90,.25);overflow:hidden;}
+#chart-modal-header{padding:18px 24px;border-bottom:1px solid var(--border-div);display:flex;align-items:center;justify-content:space-between;background:var(--bg-role);flex-shrink:0;}
+#chart-modal-body{flex:1;overflow:auto;padding:20px 24px;}
+#chart-modal-footer{padding:14px 24px;border-top:1px solid var(--border-div);display:flex;align-items:center;justify-content:flex-end;gap:10px;background:#fff;flex-shrink:0;}
+
+/* PERIOD TOGGLE */
+.period-toggle{display:flex;gap:0;border:1px solid var(--border-btn);border-radius:8px;overflow:hidden;}
+.period-btn{padding:6px 16px;font-size:12px;font-weight:700;border:none;background:#fff;color:var(--text-tag);cursor:pointer;transition:all .15s;}
+.period-btn.active{background:var(--dark-blue);color:#fff;}
+
+/* INTERVIEWER 8-CARDS */
+.int-8cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.int-stat-card{background:var(--bg-white);border:1px solid var(--border-btn);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);text-align:center;}
+.int-stat-card .lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text-tag);margin-bottom:6px;}
+.int-stat-card .num{font-size:28px;font-weight:700;color:var(--dark-blue);line-height:1;}
+.int-stat-card .sub{font-size:10px;color:var(--text-muted);margin-top:3px;}
+
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border-btn);border-radius:10px;}
+
+@media(max-width:860px){
+  #sidebar{width:58px;min-width:58px;}
+  .sb-name,.sb-group-label,.sb-item>span{display:none;}
+  .sb-item{padding:12px;justify-content:center;}
+  #content{padding:14px;}
+  .detail-2col,.perf-grid,.int-8cards{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+
+<!-- ADD CANDIDATE MODAL -->
+<div id="add-cand-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:28px 28px 24px;width:100%;max-width:480px;box-shadow:0 8px 40px rgba(22,46,90,.18);position:relative;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div style="font-size:16px;font-weight:700;color:var(--dark-blue);">Add New Candidate</div>
+      <button onclick="closeAddCandidateModal()" style="background:none;border:none;font-size:20px;color:var(--text-muted);cursor:pointer;">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="grid-column:1/-1;"><label style="font-size:11px;font-weight:700;color:var(--text-tag);text-transform:uppercase;letter-spacing:.8px;">Candidate Name *</label><input id="acm-name" type="text" placeholder="Full name" style="width:100%;margin-top:4px;padding:8px 11px;border:1px solid var(--border-inp);border-radius:7px;font-size:13px;"/></div>
+      <div><label style="font-size:11px;font-weight:700;color:var(--text-tag);text-transform:uppercase;letter-spacing:.8px;">Email *</label><input id="acm-email" type="email" placeholder="example@gmail.com" style="width:100%;margin-top:4px;padding:8px 11px;border:1px solid var(--border-inp);border-radius:7px;font-size:13px;"/></div>
+      <div><label style="font-size:11px;font-weight:700;color:var(--text-tag);text-transform:uppercase;letter-spacing:.8px;">Contact *</label><input id="acm-contact" type="tel" placeholder="10-15 digit number" maxlength="18" style="width:100%;margin-top:4px;padding:8px 11px;border:1px solid var(--border-inp);border-radius:7px;font-size:13px;"/></div>
+      <div><label style="font-size:11px;font-weight:700;color:var(--text-tag);text-transform:uppercase;letter-spacing:.8px;">Job Title</label><input id="acm-job" type="text" placeholder="Role applied for" style="width:100%;margin-top:4px;padding:8px 11px;border:1px solid var(--border-inp);border-radius:7px;font-size:13px;"/></div>
+      <div><label style="font-size:11px;font-weight:700;color:var(--text-tag);text-transform:uppercase;letter-spacing:.8px;">Qualification</label><input id="acm-qual" type="text" placeholder="B.E., MBA..." style="width:100%;margin-top:4px;padding:8px 11px;border:1px solid var(--border-inp);border-radius:7px;font-size:13px;"/></div>
+      <div><label style="font-size:11px;font-weight:700;color:var(--text-tag);text-transform:uppercase;letter-spacing:.8px;">Expected Salary</label><input id="acm-salary" type="text" placeholder="e.g. 4.5 LPA" style="width:100%;margin-top:4px;padding:8px 11px;border:1px solid var(--border-inp);border-radius:7px;font-size:13px;"/></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
+      <button onclick="closeAddCandidateModal()" style="padding:8px 18px;border-radius:8px;border:1px solid var(--border-btn);background:#fff;color:var(--text-btn);font-size:13px;font-weight:600;">Cancel</button>
+      <button onclick="doAddCandidateFromAdmin()" style="padding:8px 18px;border-radius:8px;border:none;background:var(--teal);color:#fff;font-size:13px;font-weight:700;">Add Candidate</button>
+    </div>
+  </div>
+</div>
+
+<!-- RANGE ASSIGN MODAL -->
+<div id="range-assign-overlay">
+  <div style="background:#fff;border-radius:12px;padding:28px;width:100%;max-width:420px;box-shadow:0 8px 40px rgba(22,46,90,.18);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div style="font-size:16px;font-weight:700;color:var(--dark-blue);">Assign by SNO Range</div>
+      <button onclick="closeRangeAssign()" style="background:none;border:none;font-size:20px;color:var(--text-muted);cursor:pointer;">✕</button>
+    </div>
+    <div style="background:#e8f4fd;border:1px solid #b3d7f0;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#1a5276;">
+      📋 <strong>Total unassigned rows visible:</strong> <span id="range-total-count" style="font-weight:700;">0</span> candidates
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--text-tag);text-transform:uppercase;letter-spacing:.8px;">From SNO *</label>
+        <input id="range-from" type="number" min="1" placeholder="e.g. 1" style="width:100%;margin-top:4px;padding:8px 11px;border:1px solid var(--border-inp);border-radius:7px;font-size:14px;font-weight:700;"/>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--text-tag);text-transform:uppercase;letter-spacing:.8px;">To SNO *</label>
+        <input id="range-to" type="number" min="1" placeholder="e.g. 75" style="width:100%;margin-top:4px;padding:8px 11px;border:1px solid var(--border-inp);border-radius:7px;font-size:14px;font-weight:700;"/>
+      </div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:11px;font-weight:700;color:var(--text-tag);text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:8px;">Assign To *</label>
+      <div style="display:flex;gap:10px;">
+        <button id="range-rec-sound" onclick="selectRangeRecruiter('soundariya')"
+          style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--border-btn);background:#fff;font-size:13px;font-weight:700;color:var(--teal);cursor:pointer;transition:all .15s;">
+          Soundariya
+        </button>
+        <button id="range-rec-thar" onclick="selectRangeRecruiter('tharshini')"
+          style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--border-btn);background:#fff;font-size:13px;font-weight:700;color:var(--dark-blue);cursor:pointer;transition:all .15s;">
+          Tharshini
+        </button>
+      </div>
+    </div>
+    <div id="range-preview" style="display:none;background:var(--bg-role);border:1px solid var(--border-div);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--text-tag);">
+      Will assign <strong id="range-preview-count">0</strong> candidates (SNO <span id="range-preview-range"></span>) to <strong id="range-preview-recruiter"></strong>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="closeRangeAssign()" style="padding:8px 18px;border-radius:8px;border:1px solid var(--border-btn);background:#fff;color:var(--text-btn);font-size:13px;font-weight:600;">Cancel</button>
+      <button onclick="doRangeAssign()" id="range-assign-btn" disabled
+        style="padding:8px 22px;border-radius:8px;border:none;background:var(--dark-blue);color:#fff;font-size:13px;font-weight:700;opacity:0.5;cursor:not-allowed;">
+        ✓ Assign Range
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- EXCEL PREVIEW MODAL -->
+<div id="excel-preview-overlay">
+  <div id="excel-preview-box">
+    <div id="excel-preview-header">
+      <div><div id="excel-preview-title">Excel Preview</div><div id="excel-preview-subtitle">Review before saving to database</div></div>
+      <button onclick="closeExcelPreview()" style="background:none;border:none;font-size:22px;color:var(--text-muted);cursor:pointer;">✕</button>
+    </div>
+    <div id="upload-progress-bar-wrap">
+      <div style="font-size:12px;font-weight:700;color:var(--teal);" id="upload-progress-text">Uploading 0 / 0...</div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="upload-progress-fill" style="width:0%"></div></div>
+    </div>
+    <div id="excel-preview-table-wrap"><table><thead id="excel-preview-thead"></thead><tbody id="excel-preview-tbody"></tbody></table></div>
+    <div id="excel-preview-footer">
+      <div class="excel-stats">
+        <div class="excel-stat">Total rows: <span id="excel-stat-total">0</span></div>
+        <div class="excel-stat">Valid: <span id="excel-stat-valid" style="color:var(--suc)">0</span></div>
+        <div class="excel-stat">Skipped: <span id="excel-stat-skip" style="color:var(--err)">0</span></div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="downloadExcelTemplate()" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border-btn);background:#fff;color:var(--text-btn);font-size:12px;font-weight:600;cursor:pointer;">📥 Template</button>
+        <button onclick="closeExcelPreview()" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border-btn);background:#fff;color:var(--text-btn);font-size:13px;font-weight:600;cursor:pointer;">Cancel</button>
+        <button onclick="saveAllExcelRows()" id="excel-save-btn" style="padding:8px 22px;border-radius:8px;border:none;background:var(--teal);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">💾 Save All to Database</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CHART / DOWNLOAD MODAL -->
+<div id="chart-modal-overlay">
+  <div id="chart-modal-box">
+    <div id="chart-modal-header">
+      <div>
+        <div id="chart-modal-title" style="font-size:15px;font-weight:700;color:var(--dark-blue);">Report</div>
+        <div id="chart-modal-sub" style="font-size:12px;color:var(--text-muted);margin-top:2px;"></div>
+      </div>
+      <button onclick="closeChartModal()" style="background:none;border:none;font-size:22px;color:var(--text-muted);cursor:pointer;">✕</button>
+    </div>
+    <div id="chart-modal-body">
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+        <div class="period-toggle">
+          <button class="period-btn active" id="period-week" onclick="switchPeriod('week')">This Week</button>
+          <button class="period-btn" id="period-month" onclick="switchPeriod('month')">This Month</button>
+        </div>
+        <span id="chart-period-label" style="font-size:12px;color:var(--text-muted);font-weight:600;"></span>
+      </div>
+      <canvas id="reportChart" style="max-height:340px;"></canvas>
+      <div id="chart-data-table" style="margin-top:20px;"></div>
+    </div>
+    <div id="chart-modal-footer">
+      <button onclick="downloadReportExcel()" style="padding:8px 18px;border-radius:8px;border:1px solid var(--border-btn);background:#fff;color:var(--text-tag);font-size:13px;font-weight:600;cursor:pointer;">📥 Download Excel</button>
+      <button onclick="downloadReportPNG()" style="padding:8px 18px;border-radius:8px;border:none;background:var(--dark-blue);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">📊 Download Chart PNG</button>
+    </div>
+  </div>
+</div>
+
+<div id="dash-inner">
+  <!-- SIDEBAR -->
+  <nav id="sidebar">
+    <div class="sb-brand">
+      <img src="Logo (1) (1).png" alt="JobSync" style="width:28px;height:28px;object-fit:contain;">
+      <span class="sb-name">The JobSync</span>
+      <span class="sb-admin-badge">Admin</span>
+    </div>
+
+    <div class="sb-group">
+      <div class="sb-group-label">Overview</div>
+      <div class="sb-item active" id="nav-overview" onclick="showView('overview')">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h5v5H2zm7 0h5v5H9zM2 9h5v5H2zm7 0h5v5H9z"/></svg>
+        <span>Admin Dashboard</span>
+      </div>
+    </div>
+
+    <div class="sb-group">
+      <div class="sb-group-label">Fresh Dump</div>
+      <div class="sb-item" id="nav-freshdump" onclick="showView('freshdump')">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z"/></svg>
+        <span>Fresh Dump</span>
+        <span class="sb-sub-cnt" id="sb-cnt-fresh">0</span>
+      </div>
+    </div>
+
+    <div class="sb-group">
+      <div class="sb-group-label">Recruiters</div>
+      <div class="sb-dropdown-toggle" id="sb-rec-toggle" onclick="toggleDrop('rec')">
+        <div class="sb-dropdown-left">
+          <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 100-6 3 3 0 000 6z"/></svg>
+          <span>Recruiters</span>
+        </div>
+        <svg class="sb-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+      </div>
+      <div class="sb-dropdown-items" id="sb-rec-items">
+        <div class="sb-sub-item" id="nav-soundariya" onclick="showRecruiterView('soundariya')">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 8a3 3 0 100-6 3 3 0 000 6zm-5 6a5 5 0 0110 0H3z"/></svg>
+          <span>Soundariya</span>
+          <span class="sb-sub-cnt" id="sb-cnt-sound">0</span>
+        </div>
+        <div class="sb-sub-item" id="nav-tharshini" onclick="showRecruiterView('tharshini')">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 8a3 3 0 100-6 3 3 0 000 6zm-5 6a5 5 0 0110 0H3z"/></svg>
+          <span>Tharshini</span>
+          <span class="sb-sub-cnt" id="sb-cnt-thar">0</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sb-group">
+      <div class="sb-group-label">Interviewer</div>
+      <div class="sb-sub-item" id="nav-ramya" onclick="showInterviewerView('ramya')" style="padding:11px 16px;border-left:3px solid transparent;">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 8a3 3 0 100-6 3 3 0 000 6zm-5 6a5 5 0 0110 0H3z"/></svg>
+        <span>Interviewer</span>
+        <span class="sb-sub-cnt" id="sb-cnt-ramya">0</span>
+      </div>
+    </div>
+
+    <div class="sb-group">
+      <div class="sb-group-label">Placement</div>
+      <div class="sb-sub-item" id="nav-shreeharine" onclick="showHRView('shreeharine')" style="padding:11px 16px;border-left:3px solid transparent;">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 8a3 3 0 100-6 3 3 0 000 6zm-5 6a5 5 0 0110 0H3z"/></svg>
+        <span>Shree Harine</span>
+        <span class="sb-sub-cnt" id="sb-cnt-hr">0</span>
+      </div>
+    </div>
+
+    <div class="sb-group">
+      <div class="sb-group-label">Clients</div>
+      <div class="sb-item" id="nav-clients" onclick="showView('clients')">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 100-6 3 3 0 000 6z"/></svg>
+        <span>All Clients</span>
+      </div>
+    </div>
+
+    <div style="flex:1;"></div>
+    <div class="sb-footer">
+      <div class="sb-user-pill">
+        <div class="sb-user-ava"><img src="Logo (1) (1).png" alt="Admin" onerror="this.style.display='none';this.parentNode.textContent='A';"></div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#fff;">Admin</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.5);">Admin Dashboard</div>
+        </div>
+        <button onclick="doLogout()" style="margin-left:auto;background:rgba(192,57,43,.2);border:none;color:#e8a09a;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:11px;font-weight:700;" title="Logout">↩</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div id="main-area">
+    <div id="topbar">
+      <div class="tb-left">
+        <div class="tb-greeting" id="tb-greeting">Good Morning, <span>Admin</span>!</div>
+        <div class="tb-datetime" id="tb-datetime"></div>
+      </div>
+      <div class="tb-right">
+        <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--suc);font-weight:600;"><span class="live-dot"></span>Live</div>
+        <button class="refresh-btn" onclick="refreshAll()">
+          <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><path d="M11.534 7h3.932a.25.25 0 01.192.41l-1.966 2.36a.25.25 0 01-.384 0l-1.966-2.36a.25.25 0 01.192-.41zm-11 2h3.932a.25.25 0 00.192-.41L2.692 6.23a.25.25 0 00-.384 0L.342 8.59A.25.25 0 00.534 9z"/><path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 11-.771-.636A6.002 6.002 0 0113.917 7H12.9A5.002 5.002 0 008 3zM3.1 9a5.002 5.002 0 008.757 2.182.5.5 0 11.771.636A6.002 6.002 0 012.083 9H3.1z"/></svg>
+          Refresh
+        </button>
+        <span class="last-refresh" id="last-refresh">—</span>
+        <div class="admin-badge-topbar">⭐ Admin</div>
+      </div>
+    </div>
+
+    <div id="content">
+
+      <!-- ===== OVERVIEW ===== -->
+      <div class="view active" id="view-overview">
+        <div class="sec-hd">
+          <div>
+            <div class="sec-ttl">Live Team Attendance</div>
+            <div class="sec-sub" id="presence-sub">Loading staff status…</div>
+          </div>
+          <button onclick="openAttendanceReportModal()"
+            style="background:var(--dark-blue);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;">
+            📊 Attendance Report
+          </button>
+        </div>
+        <div class="presence-row" id="presence-row"><div style="padding:30px;color:var(--text-muted);font-size:13px;">Loading…</div></div>
+
+        <div class="tbl-wrap" style="margin-bottom:20px;">
+          <div class="tbl-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Staff Member</th>
+                  <th>Role</th>
+                  <th>Login Time</th>
+                  <th>Logout Time</th>
+                  <th>Hours Worked</th>
+                  <th>Breaks Today</th>
+                  <th>Break Duration</th>
+                  <th>Idle Time</th>
+                  <th>Meeting</th>
+                  <th>Training</th>
+                  <th>Status</th>
+                  <th>Target (9hr)</th>
+                </tr>
+              </thead>
+              <tbody id="attendance-tbody"><tr><td colspan="12"><div class="empty"><p>Loading attendance…</p></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="sec-hd" style="margin-top:24px;">
+          <div><div class="sec-ttl">🤝 Meeting & Training Log</div><div class="sec-sub">All activity details for today</div></div>
+        </div>
+        <div class="tbl-wrap">
+          <div class="tbl-scroll">
+            <table>
+              <thead><tr>
+                <th>Staff Member</th>
+                <th>Type</th>
+                <th>Topic</th>
+                <th>With Whom</th>
+                <th>Notes</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Duration</th>
+              </tr></thead>
+              <tbody id="activity-log-tbody"><tr><td colspan="8"><div class="empty"><p>No activities today.</p></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi-big"><div class="kpi-big-lbl">Total Candidates</div><div class="kpi-big-num" id="k-total-cands">—</div><div class="kpi-big-sub">All recruiters combined</div></div>
+          <div class="kpi-card" style="border-top:3px solid var(--teal);"><div class="kpi-c-lbl" style="color:var(--teal);">Scheduled Today</div><div class="kpi-c-num" id="k-scheduled-today" style="color:var(--teal);">—</div><div class="kpi-c-sub">Interviews today</div></div>
+          <div class="kpi-card" style="border-top:3px solid #8e44ad;"><div class="kpi-c-lbl" style="color:#8e44ad;">In Pipeline</div><div class="kpi-c-num" id="k-in-pipeline" style="color:#8e44ad;">—</div><div class="kpi-c-sub">Placement pipeline</div></div>
+          <div class="kpi-card" style="border-top:3px solid #27ae60;"><div class="kpi-c-lbl" style="color:#27ae60;">Placed</div><div class="kpi-c-num" id="k-placed-total" style="color:#27ae60;">—</div><div class="kpi-c-sub">Total placements</div></div>
+          <div class="kpi-card" style="border-top:3px solid #1a5276;"><div class="kpi-c-lbl" style="color:#1a5276;">Total Clients</div><div class="kpi-c-num" id="k-total-clients" style="color:#1a5276;">—</div><div class="kpi-c-sub">Registered companies</div></div>
+        </div>
+
+        <div class="sec-hd"><div><div class="sec-ttl">Recruiter Performance — Live</div><div class="sec-sub">Real-time candidate counts per recruiter</div></div></div>
+        <div class="perf-grid" id="recruiter-perf-grid"><div style="padding:20px;color:var(--text-muted);">Loading…</div></div>
+
+        <div class="detail-2col">
+          <div class="detail-card"><div class="detail-card-title">🎯 Interviewer</div><div id="int-summary-body"><div style="color:var(--text-muted);font-size:12px;">Loading…</div></div></div>
+          <div class="detail-card"><div class="detail-card-title">🏢 Placement — Shree Harine</div><div id="hr-summary-body"><div style="color:var(--text-muted);font-size:12px;">Loading…</div></div></div>
+        </div>
+      </div>
+
+      <!-- ===== FRESH DUMP VIEW ===== -->
+      <div class="view" id="view-freshdump">
+        <div class="sec-hd">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <button class="refresh-btn" onclick="showView('overview')" style="color:var(--text-btn);border-color:var(--border-btn);">← Back</button>
+            <div><div class="sec-ttl">Fresh Dump — Assign to Recruiter</div><div class="sec-sub" id="fresh-view-sub">All fresh candidates</div></div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <button onclick="openAddCandidateModal()" style="background:var(--teal);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">+ Add Candidate</button>
+            <input type="file" id="excelUpload" accept=".xlsx,.xls" style="display:none" onchange="handleExcelUpload(event)">
+            <button onclick="document.getElementById('excelUpload').click()" style="background:#162E5A;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">📊 Upload Excel</button>
+            <button onclick="downloadFreshDumpExcel()" style="background:#27ae60;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">📥 Download All</button>
+            <!-- ✅ NEW: Range Assign button -->
+            <button onclick="openRangeAssign()" style="background:#8e44ad;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">🔢 Assign by Range</button>
+            <select id="fresh-filter-recruiter" onchange="renderFreshDump()" style="padding:7px 12px;border-radius:8px;border:1px solid var(--border-btn);font-size:12px;font-weight:600;color:var(--text-inp);background:#fff;">
+              <option value="unassigned">Unassigned</option>
+              <option value="">All</option>
+              <option value="soundariya">Soundariya</option>
+              <option value="tharshini">Tharshini</option>
+            </select>
+            <button class="refresh-btn" onclick="loadAndRenderFreshDump()">
+              <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><path d="M11.534 7h3.932a.25.25 0 01.192.41l-1.966 2.36a.25.25 0 01-.384 0l-1.966-2.36a.25.25 0 01.192-.41zm-11 2h3.932a.25.25 0 00.192-.41L2.692 6.23a.25.25 0 00-.384 0L.342 8.59A.25.25 0 00.534 9z"/><path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 11-.771-.636A6.002 6.002 0 0113.917 7H12.9A5.002 5.002 0 008 3zM3.1 9a5.002 5.002 0 008.757 2.182.5.5 0 11.771.636A6.002 6.002 0 012.083 9H3.1z"/></svg>
+              Refresh
+            </button>
+          </div>
+        </div>
+
+        <div class="kpi-row" id="fresh-kpi-row" style="margin-bottom:20px;"></div>
+
+        <!-- Bulk assign bar -->
+        <div id="fresh-bulk-bar" style="display:none;background:var(--teal-light);border:1px solid var(--teal);border-radius:var(--radius);padding:12px 18px;margin-bottom:14px;align-items:center;gap:14px;flex-wrap:wrap;">
+          <span style="font-size:13px;font-weight:700;color:var(--teal);" id="fresh-selected-count">0 selected</span>
+          <span style="font-size:12px;color:var(--text-tag);">Assign to:</span>
+          <button onclick="bulkAssign('soundariya')" style="background:var(--teal);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">Soundariya</button>
+          <button onclick="bulkAssign('tharshini')" style="background:var(--dark-blue);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">Tharshini</button>
+          <button onclick="clearFreshSelection()" style="background:transparent;color:var(--err);border:1px solid var(--err-bdr);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">✕ Clear Selection</button>
+        </div>
+
+        <div class="tbl-wrap">
+          <div class="tbl-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th><input type="checkbox" id="fresh-chk-all" onchange="toggleAllFresh(this)" style="cursor:pointer;"></th>
+                  <th>SNO</th><th>Date</th><th>Candidate</th><th>Contact</th><th>Email</th>
+                  <th>Qualification</th><th>Job Title</th><th>Experience</th><th>Current CTC</th>
+                  <th>Exp. Salary</th><th>Location</th><th>Prev. Location</th><th>Remarks</th>
+                  <th>Assigned To</th><th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="fresh-dump-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== RECRUITER VIEW ===== -->
+      <div class="view" id="view-recruiter">
+        <div class="sec-hd">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <button class="refresh-btn" onclick="showView('overview')" style="color:var(--text-btn);border-color:var(--border-btn);">← Back</button>
+            <div><div class="sec-ttl" id="rec-view-title">Recruiter Dashboard</div><div class="sec-sub" id="rec-view-sub">Live candidate stats</div></div>
+          </div>
+          <button onclick="openRecruiterChartModal()" style="background:var(--dark-blue);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;">📊 Download Report</button>
+          <button onclick="downloadRecruiterCandidatesExcel()" style="background:#27ae60;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;">📥 Download All Candidates</button>
+        </div>
+        <div class="kpi-row" id="rec-kpi-row"></div>
+        <div class="tbl-wrap">
+          <div class="tbl-scroll">
+            <table>
+              <thead><tr><th>SNO</th><th>Candidate</th><th>Contact</th><th>Job</th><th>Status</th><th>Follow-up</th><th>Notes</th><th>Added</th></tr></thead>
+              <tbody id="rec-cands-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== INTERVIEWER VIEW ===== -->
+      <div class="view" id="view-interviewer">
+        <div class="sec-hd">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <button class="refresh-btn" onclick="showView('overview')" style="color:var(--text-btn);border-color:var(--border-btn);">← Back</button>
+            <div><div class="sec-ttl">Interviewer Dashboard</div></div>
+          </div>
+          <button onclick="openInterviewerChartModal()" style="background:var(--dark-blue);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;">📊 Download Report</button>
+        </div>
+        <div class="int-8cards" id="int-8cards"></div>
+        <div class="tbl-wrap">
+          <div class="tbl-scroll">
+            <table>
+              <thead><tr><th>SNO</th><th>Candidate</th><th>Recruiter</th><th>Contact</th><th>Job</th><th>Interview Date</th><th>Status</th></tr></thead>
+              <tbody id="int-cands-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== HR VIEW ===== -->
+      <div class="view" id="view-hr">
+        <div class="sec-hd">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <button class="refresh-btn" onclick="showView('overview')" style="color:var(--text-btn);border-color:var(--border-btn);">← Back</button>
+            <div><div class="sec-ttl">Shree Harine — Placement Dashboard</div></div>
+          </div>
+        </div>
+        <div class="kpi-row" id="hr-kpi-row"></div>
+        <div class="tbl-wrap">
+          <div class="tbl-scroll">
+            <table>
+              <thead><tr><th>SNO</th><th>Candidate</th><th>Country</th><th>Stage</th><th>BGV Docs</th><th>Training</th><th>Placed At</th></tr></thead>
+              <tbody id="hr-pipeline-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== CLIENTS VIEW ===== -->
+      <div class="view" id="view-clients">
+        <div class="sec-hd">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <button class="refresh-btn" onclick="showView('overview')" style="color:var(--text-btn);border-color:var(--border-btn);">← Back</button>
+            <div><div class="sec-ttl">All Clients</div></div>
+          </div>
+        </div>
+        <div class="kpi-row" id="client-kpi-row"></div>
+        <div class="tbl-wrap">
+          <div class="tbl-scroll">
+            <table>
+              <thead><tr><th>SNO</th><th>Company</th><th>Type</th><th>Contact</th><th>Number</th><th>Openings</th><th>Requirements</th><th>Location</th></tr></thead>
+              <tbody id="clients-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ATTENDANCE REPORT MODAL -->
+<div id="att-report-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:4000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;width:98vw;max-width:1100px;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 16px 60px rgba(22,46,90,.25);overflow:hidden;">
+    <div style="padding:18px 24px;border-bottom:1px solid var(--border-div);display:flex;align-items:center;justify-content:space-between;background:var(--bg-role);flex-shrink:0;">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--dark-blue);">📊 Attendance Report</div>
+        <div id="att-report-range" style="font-size:12px;color:var(--text-muted);margin-top:2px;"></div>
+      </div>
+      <button onclick="closeAttendanceReport()" style="background:none;border:none;font-size:22px;color:var(--text-muted);cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:14px 24px;border-bottom:1px solid var(--border-div);display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#fff;flex-shrink:0;">
+      <div class="period-toggle">
+        <button class="period-btn active" id="att-btn-week" onclick="switchAttPeriod('week')">This Week</button>
+        <button class="period-btn" id="att-btn-month" onclick="switchAttPeriod('month')">This Month</button>
+      </div>
+      <div id="att-week-nav" style="display:flex;gap:6px;align-items:center;">
+        <button onclick="attWeekShift(-1)" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border-btn);background:#fff;cursor:pointer;font-size:13px;">◀</button>
+        <span id="att-week-label" style="font-size:12px;font-weight:700;color:var(--dark-blue);min-width:120px;text-align:center;"></span>
+        <button onclick="attWeekShift(1)" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border-btn);background:#fff;cursor:pointer;font-size:13px;">▶</button>
+      </div>
+      <div id="att-month-nav" style="display:none;gap:6px;align-items:center;">
+        <button onclick="attMonthShift(-1)" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border-btn);background:#fff;cursor:pointer;font-size:13px;">◀</button>
+        <span id="att-month-label" style="font-size:12px;font-weight:700;color:var(--dark-blue);min-width:100px;text-align:center;"></span>
+        <button onclick="attMonthShift(1)" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border-btn);background:#fff;cursor:pointer;font-size:13px;">▶</button>
+      </div>
+      <button onclick="loadAttendanceReport()" style="padding:6px 14px;border-radius:8px;background:rgba(31,154,148,.1);border:1px solid rgba(31,154,148,.25);color:var(--teal);font-size:12px;font-weight:700;cursor:pointer;">🔄 Refresh</button>
+    </div>
+    <div id="att-report-kpi" style="padding:12px 24px;border-bottom:1px solid var(--border-div);display:flex;gap:14px;flex-wrap:wrap;background:#f9fbfd;flex-shrink:0;"></div>
+    <div style="flex:1;overflow:auto;padding:16px 24px;">
+      <div id="att-report-body"><p style="color:var(--text-muted);font-size:13px;">Loading…</p></div>
+    </div>
+    <div style="padding:14px 24px;border-top:1px solid var(--border-div);display:flex;justify-content:flex-end;gap:10px;background:#fff;flex-shrink:0;">
+      <button onclick="downloadAttendanceExcel()" style="padding:8px 18px;border-radius:8px;border:none;background:var(--teal);color:#fff;font-size:13px;font-weight:700;cursor:pointer;">📥 Download Excel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// ADMIN DASHBOARD — Full Featured v6
+// KEY FIXES:
+//  1. ✅ Fresh Dump default shows UNASSIGNED only
+//  2. ✅ After assignment, candidate disappears from Unassigned view
+//  3. ✅ SNO Range bulk assign (e.g. 1-75 → Soundariya)
+//  4. ✅ Attendance auto-marks when admin logs in via /api/attendance/mark
+//  5. ✅ Real-time polling every 15s
+// ============================================================
+
+const TOKEN = sessionStorage.getItem('crm_token') || '';
+let allCandidates = [], allClients = [], placementPipeline = [], staffStatus = [], liveStats = {};
+let toastTm = null, dropState = { rec: false };
+let freshSelectedIds = new Set(), excelParsedRows = [];
+let curRecruiterKey = 'soundariya';
+// Stores currently displayed fresh rows (for range-assign SNO mapping)
+let freshDisplayedRows = [];
+
+const RECRUITER_IDS = { soundariya: 1, tharshini: 2 };
+const STAFF_IMGS = {
+  soundariya: 'WhatsApp Image 2026-04-03 at 10.09.47 AM.jpeg',
+  tharshini:  'WhatsApp Image 2026-04-03 at 11.06.00 AM.jpeg',
+  ramya:      '',
+  shreeharine:'WhatsApp Image 2026-04-07 at 10.04.42 AM.jpeg',
+};
+
+// ── CHART STATE ──────────────────────────────────────────
+let reportChartInstance = null;
+let chartCurrentPeriod = 'week';
+let chartCurrentType = 'recruiter';
+let chartCurrentData = {};
+
+// ── INIT ─────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // ✅ FIX 4: Mark attendance when admin opens dashboard
+  await markAdminAttendance();
+
+  await refreshAll();
+  setInterval(refreshAll, 15000);
+  showView('overview');
+});
+
+// ✅ Mark admin attendance on login/page-open
+async function markAdminAttendance() {
+  try {
+    await fetch('/api/attendance/mark', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-session-token': TOKEN
+      }
+    });
+  } catch(e) {
+    // Also try the login endpoint as fallback
+    try {
+      await fetch('/api/attendance/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-session-token': TOKEN
+        }
+      });
+    } catch(e2) {}
+  }
+}
+
+async function refreshAll() {
+  try {
+    await Promise.all([loadAttendanceToday(), loadLiveStats(), loadCandidates(), loadClients()]);
+    loadPlacementData();
+    renderOverview();
+    renderSidebarCounts();
+    updateLastRefresh();
+  } catch(e) { console.error('Refresh error:', e); }
+}
+
+// ── DATA LOADERS ──────────────────────────────────────
+async function loadAttendanceToday() {
+  try {
+    const res = await fetch('/api/attendance/today', { headers: { 'x-session-token': TOKEN } });
+    const data = await res.json();
+    if (data.success) staffStatus = data.staff || [];
+  } catch(e) { console.warn('attendance/today failed:', e.message); }
+}
+
+async function loadLiveStats() {
+  try {
+    const res = await fetch('/api/attendance/live-stats', { headers: { 'x-session-token': TOKEN } });
+    const data = await res.json();
+    if (data.success) liveStats = data;
+  } catch(e) { console.warn('live-stats failed:', e.message); }
+}
+
+async function loadCandidates() {
+  try {
+    const res = await fetch('/api/candidates', { headers: { 'x-session-token': TOKEN } });
+    const data = await res.json();
+    allCandidates = data.candidates || [];
+  } catch(e) { allCandidates = []; }
+}
+
+async function loadClients() {
+  try {
+    const res = await fetch('/api/clients', { headers: { 'x-session-token': TOKEN } });
+    const data = await res.json();
+    allClients = data.clients || [];
+  } catch(e) { allClients = []; }
+}
+
+function loadPlacementData() {
+  try { placementPipeline = JSON.parse(localStorage.getItem('pl_pipeline') || '[]'); }
+  catch(e) { placementPipeline = []; }
+}
+
+// ── OVERVIEW ──────────────────────────────────────────
+function renderOverview() {
+  renderPresenceCards();
+  renderAttendanceTable();
+  renderKPIs();
+  renderRecruiterPerf();
+  renderIntHRSummary();
+}
+
+// ── PRESENCE CARDS ────────────────────────────────────
+function renderPresenceCards() {
+  const container = document.getElementById('presence-row');
+  const sub = document.getElementById('presence-sub');
+
+  const nameMap = {
+    soundariya: ['Soundariya','Sowndarya'],
+    tharshini:  ['Tharshini'],
+    ramya:      ['Interviewer'],
+    shreeharine:['Shree Harine','Shreeharine'],
+  };
+  const defaultStaff = [
+    { key:'soundariya', displayName:'Soundariya', role:'Recruiter' },
+    { key:'tharshini',  displayName:'Tharshini',  role:'Recruiter' },
+    { key:'ramya',      displayName:'Interviewer',       role:'Interviewer' },
+    { key:'shreeharine',displayName:'Shree Harine',role:'Placement Officer' },
+  ];
+
+  const onlineCount = staffStatus.filter(s => s.liveStatus === 'online').length;
+  if (sub) sub.textContent = `${onlineCount} online · ${staffStatus.length} total staff · Auto-refreshes every 15s`;
+
+  const cards = defaultStaff.map(def => {
+    const names = nameMap[def.key] || [def.displayName];
+    const record = staffStatus.find(s =>
+      names.some(n => s.name?.toLowerCase().includes(n.toLowerCase()) || s.username?.toLowerCase().includes(n.toLowerCase()))
+    );
+    const status = record?.liveStatus || 'not_logged_in';
+    const loginTime = record?.loginTime || null;
+    const logoutTime = record?.logoutTime || null;
+    const breakType = record?.breakType || null;
+    const breakMins = record?.breakMinsElapsed || 0;
+    const totalBreak = record?.totalBreakMins || 0;
+    const breakCount = record?.breakCount || 0;
+
+    const statusConfig = {
+      online:        { label:'Online',       dotClass:'dot-online',  color:'#27ae60' },
+      on_break:      { label: breakType === 'lunch' ? '🍽 Lunch Break' : '☕ Short Break', dotClass:'dot-break', color:'#e67e22' },
+      logged_out:    { label:'Logged Out',   dotClass:'dot-logout',  color:'#7f8c8d' },
+      not_logged_in: { label:'Not Logged In',dotClass:'dot-offline', color:'#e74c3c' },
+    };
+    const sc = statusConfig[status] || statusConfig.not_logged_in;
+    const img = STAFF_IMGS[def.key] || '';
+
+    const loginInfo = loginTime
+      ? `<div class="pc-login-time">🕐 Logged in: <strong>${esc(loginTime)}</strong>${logoutTime ? ' · Out: '+esc(logoutTime) : ''}</div>`
+      : `<div class="pc-login-time" style="color:var(--err);">Not logged in today</div>`;
+
+    const breakInfo = breakCount > 0
+      ? `<div class="pc-login-time">☕ ${breakCount} break${breakCount>1?'s':''} · ${totalBreak} min total</div>` : '';
+    const breakTimer = status === 'on_break'
+      ? `<div class="pc-login-time" style="color:#e67e22;">Break time: ${breakMins} min elapsed</div>` : '';
+
+    return `<div class="presence-card ${status}">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+        <div class="pc-ava">${img ? `<img src="${esc(img)}" alt="${esc(def.displayName)}" onerror="this.style.display='none';this.parentNode.innerHTML='👤';">` : '👤'}</div>
+        <div><div class="pc-role">${esc(def.role)}</div><div class="pc-name">${esc(def.displayName)}</div></div>
+      </div>
+      <div class="pc-status"><span class="${sc.dotClass}"></span><span style="color:${sc.color};">${sc.label}</span></div>
+      ${loginInfo}${breakInfo}${breakTimer}
+    </div>`;
+  });
+  container.innerHTML = cards.join('');
+}
+
+// ── ATTENDANCE TABLE ──────────────────────────────────
+function renderAttendanceTable() {
+  const tb = document.getElementById('attendance-tbody');
+  if (!staffStatus.length) {
+    tb.innerHTML = '<tr><td colspan="12"><div class="empty"><p>No attendance data yet today.</p></div></td></tr>';
+    return;
+  }
+  const statusMap = {
+    online:        ['b-green',  'Online'],
+    on_break:      ['b-orange', 'On Break'],
+    logged_out:    ['b-gray',   'Logged Out'],
+    not_logged_in: ['b-red',    'Not Logged In'],
+  };
+  renderActivityLog();
+  tb.innerHTML = staffStatus.map((s) => {
+    const [badgeCls, badgeLbl] = statusMap[s.liveStatus] || ['b-gray','Unknown'];
+    const roleLabels = { recruiter:'Recruiter', interviewer:'Interviewer', hr:'Placement' };
+    const breakInfo = s.breakCount > 0 ? `${s.breakCount} break${s.breakCount>1?'s':''}` : '—';
+
+    const pct     = s.targetProgress || 0;
+    const wMins   = s.workedMins || 0;
+    const wFmt    = s.workedFormatted || '0 hr 0 min';
+    const barColor = pct >= 100 ? '#27ae60' : pct >= 60 ? '#e67e22' : '#e74c3c';
+    const hoursBar = `
+      <div style="min-width:140px;">
+        <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px;">
+          <span style="font-weight:700;color:${barColor};">${wFmt}</span>
+          <span style="color:var(--text-muted);">${pct}% of 9hr</span>
+        </div>
+        <div style="height:6px;background:#e4eaf2;border-radius:3px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:${barColor};border-radius:3px;transition:width .5s;"></div>
+        </div>
+      </div>`;
+
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--mid-blue));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;">${esc(s.name?.charAt(0)||'?')}</div>
+        <div><div style="font-weight:700;font-size:13px;">${esc(s.name||s.username||'—')}</div><div style="font-size:10px;color:var(--text-muted);">@${esc(s.username||'')}</div></div>
+      </div></td>
+      <td><span class="badge b-blue">${roleLabels[s.role]||s.role}</span></td>
+      <td style="font-size:13px;font-weight:600;color:var(--dark-blue);">${s.loginTime ? '🕐 '+esc(s.loginTime) : '<span style="color:var(--text-muted);">—</span>'}</td>
+      <td style="font-size:13px;">${s.logoutTime ? '🚪 '+esc(s.logoutTime) : '<span style="color:var(--text-muted);">—</span>'}</td>
+      <td>${hoursBar}</td>
+      <td style="font-size:12px;">${breakInfo}</td>
+      <td style="font-size:12px;">${s.totalBreakMins > 0 ? s.totalBreakMins+' min' : '—'}</td>
+      <td style="font-size:12px;color:#e67e22;font-weight:600;">${(()=>{
+        if(!s.loginTime) return '—';
+        function toMins(t){ const [time,period]=t.split(' '); const [h,m]=time.split(':'); let hr=parseInt(h)%12; if(period==='PM') hr+=12; return hr*60+parseInt(m); }
+        const loginM = toMins(s.loginTime);
+        const logoutM = s.logoutTime ? toMins(s.logoutTime) : Math.floor((Date.now()-new Date().setHours(0,0,0,0))/60000);
+        const totalM = logoutM - loginM;
+        const idle = totalM - wMins - (s.totalBreakMins||0);
+        return idle>0 ? Math.floor(idle/60)+' hr '+idle%60+' min' : '0 hr 0 min';
+      })()}</td>
+      <td style="font-size:12px;color:#2563eb;font-weight:600;">${s.meetingMins > 0 ? s.meetingMins+' min' : '—'}</td>
+      <td style="font-size:12px;color:#7c3aed;font-weight:600;">${s.trainingMins > 0 ? s.trainingMins+' min' : '—'}</td>
+      <td><span class="badge ${badgeCls}">${badgeLbl}</span></td>
+      <td>${pct>=100?'<span class="badge b-green">✓ Target Met</span>':s.liveStatus==='logged_out'?`<span class="badge b-red">-${fmtMinsJS(Math.max(0,540-wMins))}</span>`:'<span style="font-size:11px;color:var(--text-muted);">In progress</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function renderActivityLog() {
+  const tb = document.getElementById('activity-log-tbody');
+  if (!tb) return;
+  try {
+    const res = await fetch('/api/attendance/activity/log', { headers: { 'x-session-token': TOKEN } });
+    const data = await res.json();
+    const rows = data.activities || [];
+    if (!rows.length) {
+      tb.innerHTML = '<tr><td colspan="8"><div class="empty"><p>No activities today.</p></div></td></tr>';
+      return;
+    }
+    const typeColor = {meeting:'#2563eb', training:'#7c3aed'};
+    tb.innerHTML = rows.map(r => `<tr>
+      <td style="font-weight:600;font-size:13px;">${esc(r.name||'')}</td>
+      <td><span class="badge" style="background:${typeColor[r.activity_type]||'#888'};color:#fff;text-transform:capitalize;">${esc(r.activity_type||'')}</span></td>
+      <td style="font-size:12px;">${esc(r.topic||'&mdash;')}</td>
+      <td style="font-size:12px;">${esc(r.with_whom||'&mdash;')}</td>
+      <td style="font-size:12px;">${esc(r.notes||'&mdash;')}</td>
+      <td style="font-size:12px;">${esc(r.start_time||'&mdash;')}</td>
+      <td style="font-size:12px;">${esc(r.end_time||'&mdash;')}</td>
+      <td style="font-size:12px;font-weight:600;">${r.duration_mins > 0 ? r.duration_mins+' min' : '&mdash;'}</td>
+    </tr>`).join('');
+  } catch(e) {
+    console.error('activity log error:', e);
+  }
+}
+function fmtMinsJS(mins) {
+  if (!mins || mins <= 0) return '0 hr 0 min';
+  return `${Math.floor(mins/60)} hr ${mins%60} min`;
+}
+
+// ── KPIs ──────────────────────────────────────────────
+function renderKPIs() {
+  const recruiters = liveStats.recruiters || [];
+  const totalCands = recruiters.reduce((s, r) => s + (r.total||0), 0) || allCandidates.length;
+  const pipeline = liveStats.placement || {};
+  setEl('k-total-cands', totalCands);
+  setEl('k-scheduled-today', liveStats.todayScheduled || 0);
+  setEl('k-in-pipeline', placementPipeline.length);
+  setEl('k-placed-total', pipeline.placed || placementPipeline.filter(c=>c.stage==='placed').length);
+  setEl('k-total-clients', allClients.length);
+}
+
+// ── RECRUITER PERF ─────────────────────────────────────
+function renderRecruiterPerf() {
+  const grid = document.getElementById('recruiter-perf-grid');
+  const recruiters = liveStats.recruiters || [];
+
+  if (!recruiters.length) {
+    const fallback = [
+      { name:'Soundariya', keys:['Sowndarya','Soundariya'], img: STAFF_IMGS.soundariya },
+      { name:'Tharshini',  keys:['Tharshini'],              img: STAFF_IMGS.tharshini  },
+    ];
+    grid.innerHTML = fallback.map(r => {
+      const cands = allCandidates.filter(c => r.keys.some(k => c.recruiter_name?.includes(k)));
+      return perfCardHTML(r.name, r.img, cands);
+    }).join('');
+    return;
+  }
+
+  const imgMap = { soundariya: STAFF_IMGS.soundariya, sowndarya: STAFF_IMGS.soundariya, tharshini: STAFF_IMGS.tharshini };
+  grid.innerHTML = recruiters.map(r => {
+    const nameKey = r.name.toLowerCase().replace(' ','');
+    const img = imgMap[nameKey] || imgMap[r.name.toLowerCase()] || '';
+    const keys = r.name.toLowerCase().includes('sound') ? ['Sowndarya','Soundariya'] : ['Tharshini'];
+    const cands = allCandidates.filter(c => keys.some(k => c.recruiter_name?.includes(k)));
+    return perfCardHTML(r.name, img, cands, r);
+  }).join('');
+}
+
+function perfCardHTML(name, img, cands, stats) {
+  const fresh       = stats?.fresh       || cands.filter(c=>c.status==='fresh').length;
+  const followups   = stats?.followups   || cands.filter(c=>c.status==='followups').length;
+  const interested  = stats?.interested  || cands.filter(c=>c.status==='interested').length;
+  const notInt      = stats?.not_interested || cands.filter(c=>c.status==='notinterested').length;
+  const scheduled   = stats?.scheduled   || cands.filter(c=>c.status==='scheduled').length;
+  const submitted   = stats?.submitted   || cands.filter(c=>c.status==='submitted').length;
+  const converted   = stats?.converted   || cands.filter(c=>c.registered).length;
+  const rnr         = stats?.rnr         || cands.filter(c=>c.status==='rnr').length;
+  const total       = stats?.total       || cands.length;
+    const _n = new Date(); const _l = new Date(_n.getTime() - _n.getTimezoneOffset()*60000); const today = _l.toISOString().split("T")[0];
+    const addedToday  = stats?.added_today || cands.filter(c=>(c.date||"").split("T")[0]===today).length;
+
+  return `<div class="perf-card">
+    <div class="perf-header">
+      <div class="perf-ava"><img src="${esc(img)}" alt="${esc(name)}" onerror="this.style.display='none';this.parentNode.textContent='${name.charAt(0)}'."></div>
+      <div><div class="perf-name">${esc(name)}</div><div class="perf-role-lbl">Recruiter · Today: +${addedToday} added</div></div>
+    </div>
+    <div class="perf-num-grid">
+      <div class="perf-num"><div class="perf-num-val" style="color:var(--teal);">${total}</div><div class="perf-num-lbl">Total</div></div>
+      <div class="perf-num"><div class="perf-num-val" style="color:#8e44ad;">${scheduled}</div><div class="perf-num-lbl">Scheduled</div></div>
+      <div class="perf-num"><div class="perf-num-val" style="color:#b8860b;">${converted}</div><div class="perf-num-lbl">Converted</div></div>
+    </div>
+    <div class="perf-tags">
+      <span class="badge b-gray">Fresh: ${fresh}</span>
+      <span class="badge b-teal">Follow-up: ${followups}</span>
+      <span class="badge b-green">Interested: ${interested}</span>
+      <span class="badge b-red">Not Int: ${notInt}</span>
+      <span class="badge b-orange">RNR: ${rnr}</span>
+      <span class="badge b-purple">Submitted: ${submitted}</span>
+    </div>
+  </div>`;
+}
+
+// ── INT + HR SUMMARY ──────────────────────────────────
+function renderIntHRSummary() {
+  const stats = liveStats.interviewer || {};
+  const plStats = liveStats.placement || {};
+  const pipeline = placementPipeline;
+  document.getElementById('int-summary-body').innerHTML = `
+    <div class="stat-row"><span class="stat-lbl">Scheduled Candidates</span><span class="stat-val" style="color:#8e44ad;">${stats.scheduled||allCandidates.filter(c=>c.status==='scheduled').length}</span></div>
+    <div class="stat-row"><span class="stat-lbl">Submitted to HR</span><span class="stat-val" style="color:var(--teal);">${stats.submittedToHR||allCandidates.filter(c=>c.status==='submitted').length}</span></div>
+    <div class="stat-row"><span class="stat-lbl">Total Pipeline</span><span class="stat-val" style="color:#27ae60;">${pipeline.length}</span></div>`;
+  const byStage = s => pipeline.filter(c=>c.stage===s).length;
+  document.getElementById('hr-summary-body').innerHTML = `
+    <div class="stat-row"><span class="stat-lbl">BGV Stage</span><span class="stat-val" style="color:#8e44ad;">${plStats.bgv||byStage('bgv')}</span></div>
+    <div class="stat-row"><span class="stat-lbl">Contract</span><span class="stat-val" style="color:#e67e22;">${plStats.contract||byStage('contract')}</span></div>
+    <div class="stat-row"><span class="stat-lbl">Training</span><span class="stat-val" style="color:#2c3e50;">${plStats.training||byStage('training')}</span></div>
+    <div class="stat-row"><span class="stat-lbl">Placed ✓</span><span class="stat-val" style="color:#27ae60;">${plStats.placed||byStage('placed')}</span></div>`;
+}
+
+// ── SIDEBAR COUNTS ─────────────────────────────────────
+function renderSidebarCounts() {
+  const recruiters = liveStats.recruiters || [];
+  const getCount = name => {
+    const r = recruiters.find(x => x.name?.toLowerCase().includes(name));
+    return r?.total || allCandidates.filter(c => c.recruiter_name?.toLowerCase().includes(name)).length;
+  };
+  setEl('sb-cnt-sound', getCount('sownd'));
+  setEl('sb-cnt-thar', getCount('thar'));
+  setEl('sb-cnt-ramya', allCandidates.filter(c=>c.status==='scheduled').length);
+  setEl('sb-cnt-hr', placementPipeline.length);
+  // ✅ Fresh count = unassigned fresh only
+  setEl('sb-cnt-fresh', allCandidates.filter(c=>c.status==='fresh' && (!c.recruiter_id || c.recruiter_id===0)).length);
+}
+
+// ── FRESH DUMP ────────────────────────────────────────
+async function loadAndRenderFreshDump() {
+  await loadCandidates();
+  renderFreshDump();
+}
+
+// ✅ FIX 1 & 2: Default filter = "unassigned"; after assign, candidate disappears
+function renderFreshDump() {
+  const filterVal = document.getElementById('fresh-filter-recruiter')?.value || 'unassigned';
+  const freshCands = allCandidates.filter(c => c.status === 'fresh');
+
+  let filtered;
+  if (filterVal === 'soundariya')
+    filtered = freshCands.filter(c => c.recruiter_id === RECRUITER_IDS.soundariya);
+  else if (filterVal === 'tharshini')
+    filtered = freshCands.filter(c => c.recruiter_id === RECRUITER_IDS.tharshini);
+  else if (filterVal === 'unassigned')
+    filtered = freshCands.filter(c => !c.recruiter_id || c.recruiter_id === 0);
+  else
+    filtered = freshCands; // "All"
+
+  // ✅ Store displayed rows for range-assign SNO mapping
+  freshDisplayedRows = [...filtered];
+
+  const soundCount = freshCands.filter(c => c.recruiter_id === RECRUITER_IDS.soundariya).length;
+  const tharCount  = freshCands.filter(c => c.recruiter_id === RECRUITER_IDS.tharshini).length;
+  const unassigned = freshCands.filter(c => !c.recruiter_id || c.recruiter_id === 0).length;
+
+  const sub = document.getElementById('fresh-view-sub');
+  if (sub) sub.textContent = `${freshCands.length} total fresh · ${unassigned} unassigned · ${soundCount} Soundariya · ${tharCount} Tharshini`;
+
+  const kpiRow = document.getElementById('fresh-kpi-row');
+  if (kpiRow) kpiRow.innerHTML = `
+    <div class="kpi-big"><div class="kpi-big-lbl">Total Fresh</div><div class="kpi-big-num">${freshCands.length}</div><div class="kpi-big-sub">${unassigned} unassigned</div></div>
+    <div class="kpi-card" style="border-top:3px solid var(--teal);"><div class="kpi-c-lbl" style="color:var(--teal);">Soundariya</div><div class="kpi-c-num" style="color:var(--teal);">${soundCount}</div><div class="kpi-c-sub">assigned</div></div>
+    <div class="kpi-card" style="border-top:3px solid var(--dark-blue);"><div class="kpi-c-lbl" style="color:var(--dark-blue);">Tharshini</div><div class="kpi-c-num" style="color:var(--dark-blue);">${tharCount}</div><div class="kpi-c-sub">assigned</div></div>
+    <div class="kpi-card" style="border-top:3px solid #e74c3c;"><div class="kpi-c-lbl" style="color:#e74c3c;">Unassigned</div><div class="kpi-c-num" style="color:#e74c3c;">${unassigned}</div><div class="kpi-c-sub">needs assignment</div></div>`;
+
+  setEl('sb-cnt-fresh', unassigned);
+
+  const tb = document.getElementById('fresh-dump-tbody');
+  if (!filtered.length) {
+    const msg = filterVal === 'unassigned'
+      ? 'All fresh candidates have been assigned! 🎉'
+      : 'No candidates in this filter.';
+    tb.innerHTML = `<tr><td colspan="16"><div class="empty"><p>${msg}</p></div></td></tr>`;
+    const allChk = document.getElementById('fresh-chk-all');
+    if (allChk) allChk.checked = false;
+    freshSelectedIds.clear();
+    updateFreshBulkBar();
+    return;
+  }
+
+  tb.innerHTML = filtered.map((c, i) => {
+    let assignedBadge;
+    if (c.recruiter_id === RECRUITER_IDS.soundariya)
+      assignedBadge = `<span class="badge b-teal">Soundariya</span>`;
+    else if (c.recruiter_id === RECRUITER_IDS.tharshini)
+      assignedBadge = `<span class="badge b-blue">Tharshini</span>`;
+    else
+      assignedBadge = `<span class="badge b-red">Unassigned</span>`;
+
+    return `<tr>
+      <td><input type="checkbox" class="fresh-row-chk" data-id="${c.id}" onchange="onFreshChkChange()" ${freshSelectedIds.has(c.id)?'checked':''}></td>
+      <td style="color:var(--text-muted);font-size:12px;font-weight:700;">${i+1}</td>
+      <td style="font-size:12px;color:var(--text-muted);white-space:nowrap">${(d=>(d?(d.getDate()+` `+["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]+` `+d.getFullYear()):"—"))(c.date?new Date(c.date.split("T")[0]+"T12:00:00"):null)}</td>
+      <td style="min-width:140px;"><strong>${esc(c.name)}</strong><br><span style="font-size:11px;color:var(--text-muted)">${esc(c.email||'')}</span></td>
+      <td style="font-size:12px;white-space:nowrap">${esc(c.contact||'—')}</td>
+      <td style="font-size:12px;white-space:nowrap">${esc(c.email||'—')}</td>
+      <td style="font-size:12px">${esc(c.qual||'—')}</td>
+      <td style="font-size:12px">${esc(c.job||'—')}</td>
+      <td style="font-size:12px">${esc(c.experience||c.expType||'—')}</td>
+      <td style="font-size:12px">${esc(c.current_ctc||'—')}</td>
+      <td style="font-size:12px">${esc(c.salary||'—')}</td>
+      <td style="font-size:12px">${esc(c.location||'—')}</td>
+      <td style="font-size:12px">${esc(c.previous_location||'—')}</td>
+      <td style="font-size:12px;max-width:120px;overflow:hidden;text-overflow:ellipsis;">${esc(c.remarks||c.notes||'—')}</td>
+      <td>${assignedBadge}</td>
+      <td style="white-space:nowrap;">
+        <div style="display:flex;gap:5px;">
+          <button onclick="assignFresh(${c.id},'soundariya')" style="background:var(--teal);color:#fff;border:none;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer;" title="Assign to Soundariya">S</button>
+          <button onclick="assignFresh(${c.id},'tharshini')" style="background:var(--dark-blue);color:#fff;border:none;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer;" title="Assign to Tharshini">T</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  updateFreshBulkBar();
+}
+
+async function assignFresh(candidateId, recruiterKey) {
+  const recruiterId = RECRUITER_IDS[recruiterKey];
+  if (!recruiterId) { showToast('Unknown recruiter.', 'err'); return; }
+  try {
+    const res = await fetch(`/api/candidates/${candidateId}/assign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+      body: JSON.stringify({ recruiter_id: recruiterId })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const c = allCandidates.find(x => x.id === candidateId);
+      if (c) { c.recruiter_id = recruiterId; c.recruiter_name = data.recruiter_name || recruiterKey; }
+      freshSelectedIds.delete(candidateId);
+      showToast(`Assigned to ${recruiterKey === 'soundariya' ? 'Soundariya' : 'Tharshini'} ✓`, 'ok');
+      // ✅ Re-render: assigned candidate disappears from unassigned view
+      renderFreshDump();
+      renderSidebarCounts();
+    } else { showToast(data.error || 'Assignment failed.', 'err'); }
+  } catch(e) { showToast('Network error.', 'err'); }
+}
+
+async function bulkAssign(recruiterKey) {
+  if (!freshSelectedIds.size) { showToast('No candidates selected.', 'err'); return; }
+  const recruiterId = RECRUITER_IDS[recruiterKey];
+  if (!recruiterId) { showToast('Unknown recruiter.', 'err'); return; }
+  const ids = [...freshSelectedIds];
+  let count = 0;
+  for (const id of ids) {
+    try {
+      const res = await fetch(`/api/candidates/${id}/assign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+        body: JSON.stringify({ recruiter_id: recruiterId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const c = allCandidates.find(x => x.id === id);
+        if (c) { c.recruiter_id = recruiterId; c.recruiter_name = data.recruiter_name || recruiterKey; }
+        count++;
+      }
+    } catch(e) {}
+  }
+  freshSelectedIds.clear();
+  showToast(`${count} candidate${count!==1?'s':''} assigned to ${recruiterKey === 'soundariya' ? 'Soundariya' : 'Tharshini'} ✓`, 'ok');
+  renderFreshDump();
+  renderSidebarCounts();
+}
+
+// ── RANGE ASSIGN ──────────────────────────────────────
+let rangeSelectedRecruiter = '';
+
+function openRangeAssign() {
+  rangeSelectedRecruiter = '';
+  document.getElementById('range-from').value = '';
+  document.getElementById('range-to').value = '';
+  document.getElementById('range-preview').style.display = 'none';
+  document.getElementById('range-assign-btn').disabled = true;
+  document.getElementById('range-assign-btn').style.opacity = '0.5';
+  document.getElementById('range-assign-btn').style.cursor = 'not-allowed';
+  // Reset recruiter button styles
+  document.getElementById('range-rec-sound').style.background = '#fff';
+  document.getElementById('range-rec-sound').style.borderColor = 'var(--border-btn)';
+  document.getElementById('range-rec-thar').style.background = '#fff';
+  document.getElementById('range-rec-thar').style.borderColor = 'var(--border-btn)';
+
+  // Update count display
+  setEl('range-total-count', freshDisplayedRows.length);
+
+  document.getElementById('range-assign-overlay').classList.add('open');
+}
+
+function closeRangeAssign() {
+  document.getElementById('range-assign-overlay').classList.remove('open');
+}
+
+function selectRangeRecruiter(key) {
+  rangeSelectedRecruiter = key;
+  const soundBtn = document.getElementById('range-rec-sound');
+  const tharBtn  = document.getElementById('range-rec-thar');
+
+  if (key === 'soundariya') {
+    soundBtn.style.background = 'var(--teal-light)';
+    soundBtn.style.borderColor = 'var(--teal)';
+    tharBtn.style.background = '#fff';
+    tharBtn.style.borderColor = 'var(--border-btn)';
+  } else {
+    tharBtn.style.background = '#e8eef8';
+    tharBtn.style.borderColor = 'var(--dark-blue)';
+    soundBtn.style.background = '#fff';
+    soundBtn.style.borderColor = 'var(--border-btn)';
+  }
+  updateRangePreview();
+}
+
+function updateRangePreview() {
+  const from = parseInt(document.getElementById('range-from').value);
+  const to   = parseInt(document.getElementById('range-to').value);
+  const preview = document.getElementById('range-preview');
+  const btn = document.getElementById('range-assign-btn');
+
+  if (!rangeSelectedRecruiter || isNaN(from) || isNaN(to) || from < 1 || to < from) {
+    preview.style.display = 'none';
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    btn.style.cursor = 'not-allowed';
+    return;
+  }
+
+  const count = Math.min(to, freshDisplayedRows.length) - from + 1;
+  if (count <= 0) {
+    preview.style.display = 'none';
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    btn.style.cursor = 'not-allowed';
+    return;
+  }
+
+  setEl('range-preview-count', count);
+  setEl('range-preview-range', `${from}–${Math.min(to, freshDisplayedRows.length)}`);
+  setEl('range-preview-recruiter', rangeSelectedRecruiter === 'soundariya' ? 'Soundariya' : 'Tharshini');
+  preview.style.display = 'block';
+  btn.disabled = false;
+  btn.style.opacity = '1';
+  btn.style.cursor = 'pointer';
+}
+
+// Add live preview update on input change
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('range-from')?.addEventListener('input', updateRangePreview);
+  document.getElementById('range-to')?.addEventListener('input', updateRangePreview);
+});
+
+async function doRangeAssign() {
+  const from = parseInt(document.getElementById('range-from').value);
+  const to   = parseInt(document.getElementById('range-to').value);
+
+  if (!rangeSelectedRecruiter) { showToast('Please select a recruiter.', 'err'); return; }
+  if (isNaN(from) || isNaN(to) || from < 1 || to < from) {
+    showToast('Please enter a valid SNO range.', 'err'); return;
+  }
+
+  const recruiterId = RECRUITER_IDS[rangeSelectedRecruiter];
+  // SNO is 1-based index into freshDisplayedRows
+  const toAssign = freshDisplayedRows.slice(from - 1, to);
+
+  if (!toAssign.length) { showToast('No candidates in that range.', 'err'); return; }
+
+  closeRangeAssign();
+
+  const btn = document.getElementById('range-assign-btn');
+  showToast(`Assigning ${toAssign.length} candidates…`, '');
+
+  let count = 0;
+  for (const c of toAssign) {
+    try {
+      const res = await fetch(`/api/candidates/${c.id}/assign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+        body: JSON.stringify({ recruiter_id: recruiterId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const found = allCandidates.find(x => x.id === c.id);
+        if (found) { found.recruiter_id = recruiterId; found.recruiter_name = data.recruiter_name || rangeSelectedRecruiter; }
+        count++;
+      }
+    } catch(e) {}
+  }
+
+  showToast(`${count} candidates assigned to ${rangeSelectedRecruiter === 'soundariya' ? 'Soundariya' : 'Tharshini'} ✓`, 'ok');
+  renderFreshDump();
+  renderSidebarCounts();
+}
+
+// ── CHECKBOX HELPERS ──────────────────────────────────
+function toggleAllFresh(chk) {
+  document.querySelectorAll('.fresh-row-chk').forEach(el => {
+    el.checked = chk.checked;
+    const id = parseInt(el.dataset.id);
+    if (chk.checked) freshSelectedIds.add(id);
+    else freshSelectedIds.delete(id);
+  });
+  updateFreshBulkBar();
+}
+
+function onFreshChkChange() {
+  freshSelectedIds.clear();
+  document.querySelectorAll('.fresh-row-chk:checked').forEach(el => freshSelectedIds.add(parseInt(el.dataset.id)));
+  const all = document.querySelectorAll('.fresh-row-chk');
+  const allChk = document.getElementById('fresh-chk-all');
+  if (allChk) {
+    if (freshSelectedIds.size === 0) { allChk.checked = false; allChk.indeterminate = false; }
+    else if (freshSelectedIds.size === all.length) { allChk.checked = true; allChk.indeterminate = false; }
+    else { allChk.checked = false; allChk.indeterminate = true; }
+  }
+  updateFreshBulkBar();
+}
+
+function clearFreshSelection() {
+  freshSelectedIds.clear();
+  document.querySelectorAll('.fresh-row-chk').forEach(el => el.checked = false);
+  const allChk = document.getElementById('fresh-chk-all');
+  if (allChk) { allChk.checked = false; allChk.indeterminate = false; }
+  updateFreshBulkBar();
+}
+
+function updateFreshBulkBar() {
+  const bar = document.getElementById('fresh-bulk-bar');
+  const cnt = document.getElementById('fresh-selected-count');
+  if (!bar) return;
+  if (freshSelectedIds.size > 0) {
+    bar.style.display = 'flex';
+    if (cnt) cnt.textContent = `${freshSelectedIds.size} selected`;
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+// ── EXCEL UPLOAD ──────────────────────────────────────
+function handleExcelUpload(event) {
+  const file = event.target.files[0]; if (!file) return;
+  event.target.value = '';
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false });
+      if (!rows.length) { showToast('Excel file is empty.', 'err'); return; }
+      excelParsedRows = rows.map(row => parseExcelRow(row)).filter(r => r !== null);
+      const skipped = rows.length - excelParsedRows.length;
+      showExcelPreview(rows, excelParsedRows.length, skipped);
+    } catch(err) { showToast('Failed to read Excel file.', 'err'); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseExcelRow(row) {
+  const name = String(row['Candidate Name'] || row['Name'] || row['CANDIDATE NAME'] || row['name'] || '').trim();
+  if (!name) return null;
+  return {
+    name, email: String(row['Mail']||row['Email ID']||row['Email']||row['email']||'').trim(),
+    contact: String(row['Contact']||row['Phone Number']||row['Mobile']||row['Phone']||row['contact']||'').trim(),
+    qual: String(row['Qualification']||row['Degree']||row['qual']||'').trim(),
+    job: String(row['Department']||row['Role']||row['Job Title']||row['Position']||row['job']||'').trim(),
+    salary: String(row['Excepted CTC']||row['Expected CTC']||row['Salary']||row['CTC']||row['salary']||'').trim(),
+    experience: String(row['Total years of experience']||row['Experience']||row['Exp']||'').trim(),
+    current_ctc: String(row['Current Ctc']||row['Current CTC']||row['current_ctc']||'').trim(),
+    location: String(row['Current Location']||row['Location']||row['location']||'').trim(),
+    previous_location: String(row['Pre location']||row['Previous Location']||row['Prev Location']||'').trim(),
+    remarks: String(row['Remarks']||row['Notes']||row['remarks']||'').trim(),
+    status: 'fresh', date: new Date().toISOString().split('T')[0],
+  };
+}
+
+function showExcelPreview(rawRows, validCount, skipped) {
+  setEl('excel-stat-total', rawRows.length);
+  setEl('excel-stat-valid', validCount);
+  setEl('excel-stat-skip', skipped);
+  setEl('excel-preview-title', `Excel Preview — ${rawRows.length} rows`);
+  setEl('excel-preview-subtitle', `${validCount} valid rows will be saved · ${skipped} skipped (no name)`);
+  const keys = rawRows.length ? Object.keys(rawRows[0]) : [];
+  document.getElementById('excel-preview-thead').innerHTML = `<tr>${keys.map(k=>`<th>${esc(k)}</th>`).join('')}</tr>`;
+  document.getElementById('excel-preview-tbody').innerHTML = rawRows.map((row) => {
+    const hasName = !!(row['Candidate Name']||row['Name']||row['CANDIDATE NAME']||row['name']||'').trim();
+    return `<tr ${hasName?'':'style="opacity:0.4;background:#fff5f5;"'}>
+      ${keys.map(k=>`<td title="${esc(String(row[k]||''))}">${esc(String(row[k]||'').substring(0,30))}${String(row[k]||'').length>30?'…':''}</td>`).join('')}
+    </tr>`;
+  }).join('');
+  document.getElementById('excel-preview-overlay').classList.add('open');
+  document.getElementById('upload-progress-bar-wrap').style.display = 'none';
+}
+
+function closeExcelPreview() {
+  document.getElementById('excel-preview-overlay').classList.remove('open');
+  excelParsedRows = [];
+}
+
+async function saveAllExcelRows() {
+  if (!excelParsedRows.length) { showToast('Nothing to save.', 'err'); return; }
+  const btn = document.getElementById('excel-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const progressWrap = document.getElementById('upload-progress-bar-wrap');
+  const progressText = document.getElementById('upload-progress-text');
+  const progressFill = document.getElementById('upload-progress-fill');
+  progressWrap.style.display = 'block';
+  let saved = 0, failed = 0;
+  const total = excelParsedRows.length;
+  const BATCH = 10;
+  for (let i = 0; i < total; i += BATCH) {
+    const batch = excelParsedRows.slice(i, i + BATCH);
+    await Promise.all(batch.map(async row => {
+      try {
+        const res = await fetch('/api/candidates', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+          body: JSON.stringify(row)
+        });
+        const data = await res.json();
+        if (data.success) saved++; else failed++;
+      } catch(e) { failed++; }
+    }));
+    const done = Math.min(i + BATCH, total);
+    progressText.textContent = `Uploading ${done} / ${total}...`;
+    progressFill.style.width = Math.round((done/total)*100) + '%';
+  }
+  progressText.textContent = `Done! ${saved} saved, ${failed} failed.`;
+  progressFill.style.width = '100%';
+  setTimeout(() => {
+    btn.disabled = false; btn.textContent = '💾 Save All to Database';
+    progressWrap.style.display = 'none';
+    closeExcelPreview();
+    showToast(`${saved} candidates saved ✓`, 'ok');
+    loadAndRenderFreshDump();
+  }, 1200);
+}
+
+function downloadFreshDumpExcel() {
+  const filterVal = document.getElementById('fresh-filter-recruiter')?.value || 'unassigned';
+  const data = freshDisplayedRows;
+  if (!data.length) { showToast('No data to download.', 'err'); return; }
+  const rows = data.map((c, i) => ({
+    'SNO': i+1, 'Date': c.date||'', 'Candidate Name': c.name||'', 'Email': c.email||'',
+    'Contact': c.contact||'', 'Qualification': c.qual||'', 'Job Title': c.job||'',
+    'Experience': c.experience||c.expType||'', 'Current CTC': c.current_ctc||'',
+    'Expected Salary': c.salary||'', 'Current Location': c.location||'',
+    'Prev Location': c.previous_location||'', 'Remarks': c.remarks||c.notes||'',
+    'Assigned To': c.recruiter_id === RECRUITER_IDS.soundariya ? 'Soundariya' : c.recruiter_id === RECRUITER_IDS.tharshini ? 'Tharshini' : 'Unassigned',
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = Object.keys(rows[0]||{}).map(k => ({ wch: Math.max(k.length, 15) }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Fresh Dump');
+  XLSX.writeFile(wb, `FreshDump_${filterVal||'All'}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  showToast(`Downloaded ${rows.length} rows ✓`, 'ok');
+}
+
+function downloadExcelTemplate() {
+  const headers = [['Candidate Name','Mail','Contact','Qualification','Department','Excepted CTC','Total years of experience','Current Ctc','Current Location','Pre location','Remarks']];
+  const ws = XLSX.utils.aoa_to_sheet(headers);
+  ws['!cols'] = headers[0].map(h => ({ wch: Math.max(h.length + 4, 18) }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Template');
+  XLSX.writeFile(wb, 'JobSync_Upload_Template.xlsx');
+  showToast('Template downloaded ✓', 'ok');
+}
+
+// ── RECRUITER DETAIL VIEW ─────────────────────────────
+function showRecruiterView(who) {
+  curRecruiterKey = who;
+  const meta = {
+    soundariya: { name:'Soundariya', keys:['Sowndarya','Soundariya'], img: STAFF_IMGS.soundariya },
+    tharshini:  { name:'Tharshini',  keys:['Tharshini'],              img: STAFF_IMGS.tharshini  },
+  };
+  const m = meta[who]; if (!m) return;
+  const cands = allCandidates.filter(c => m.keys.some(k => c.recruiter_name?.includes(k)));
+
+  setEl('rec-view-title', m.name + ' — Recruiter Dashboard');
+  setEl('rec-view-sub', cands.length + ' total candidates');
+
+  const fresh      = cands.filter(c=>c.status==='fresh').length;
+  const interested = cands.filter(c=>c.status==='interested').length;
+  const notInt     = cands.filter(c=>c.status==='notinterested').length;
+  const rnr        = cands.filter(c=>c.status==='rnr').length;
+  const fu         = cands.filter(c=>c.status==='followups').length;
+  const scheduled  = cands.filter(c=>c.status==='scheduled').length;
+  const submitted  = cands.filter(c=>c.status==='submitted').length;
+  const converted  = cands.filter(c=>c.registered).length;
+    const _n2 = new Date(); const _l2 = new Date(_n2.getTime() - _n2.getTimezoneOffset()*60000); const today = _l2.toISOString().split("T")[0];
+    const addedToday = cands.filter(c=>(c.date||"").split("T")[0]===today).length;
+
+  document.getElementById('rec-kpi-row').innerHTML = `
+    <div class="kpi-big"><div class="kpi-big-lbl">Total</div><div class="kpi-big-num">${cands.length}</div><div class="kpi-big-sub">${converted} conversions · ${addedToday} today</div></div>
+    <div class="kpi-card" style="border-top:3px solid #aab4c4;"><div class="kpi-c-lbl">Fresh</div><div class="kpi-c-num">${fresh}</div></div>
+    <div class="kpi-card" style="border-top:3px solid var(--teal);"><div class="kpi-c-lbl" style="color:var(--teal);">Follow-ups</div><div class="kpi-c-num" style="color:var(--teal);">${fu}</div></div>
+    <div class="kpi-card" style="border-top:3px solid #27ae60;"><div class="kpi-c-lbl" style="color:#27ae60;">Interested</div><div class="kpi-c-num" style="color:#27ae60;">${interested}</div></div>
+    <div class="kpi-card" style="border-top:3px solid #e74c3c;"><div class="kpi-c-lbl" style="color:#e74c3c;">Not Int.</div><div class="kpi-c-num" style="color:#e74c3c;">${notInt}</div></div>
+    <div class="kpi-card" style="border-top:3px solid #8e44ad;"><div class="kpi-c-lbl" style="color:#8e44ad;">Scheduled</div><div class="kpi-c-num" style="color:#8e44ad;">${scheduled}</div></div>
+    <div class="kpi-card" style="border-top:3px solid #b8860b;"><div class="kpi-c-lbl" style="color:#b8860b;">Converted</div><div class="kpi-c-num" style="color:#b8860b;">${converted}</div></div>
+    <div class="kpi-card" style="border-top:3px solid #e67e22;"><div class="kpi-c-lbl" style="color:#e67e22;">RNR</div><div class="kpi-c-num" style="color:#e67e22;">${rnr}</div></div>`;
+
+  const SLBL = { fresh:'Fresh',followups:'Follow-Up',interested:'Interested',rnr:'RNR',callback:'Callback',notinterested:'Not Interested',scheduled:'Scheduled',submitted:'Submitted' };
+  const SBDG = { fresh:'b-gray',followups:'b-teal',interested:'b-green',rnr:'b-orange',callback:'b-blue',notinterested:'b-red',scheduled:'b-purple',submitted:'b-green' };
+
+  const tb = document.getElementById('rec-cands-tbody');
+  if (!cands.length) { tb.innerHTML = '<tr><td colspan="8"><div class="empty"><p>No candidates.</p></div></td></tr>'; }
+  else {
+    tb.innerHTML = cands.map((c,i) => `<tr>
+      <td style="color:var(--text-muted);font-size:12px;">${i+1}</td>
+      <td><strong>${esc(c.name)}</strong><br><span style="font-size:11px;color:var(--text-muted);">${esc(c.email||'')}</span></td>
+      <td style="font-size:12px;">${esc(c.contact)}</td>
+      <td style="font-size:12px;">${esc(c.job||'—')}</td>
+      <td><span class="badge ${SBDG[c.status]||'b-gray'}">${SLBL[c.status]||c.status}</span></td>
+      <td style="font-size:12px;">${c.followupDate ? "📅 " + c.followupDate.split("T")[0] : "—"}</td>
+      <td style="font-size:12px;max-width:160px;color:var(--text-tag);">${c.notes?esc(String(c.notes).substring(0,55))+'…':'—'}</td>
+      <td style="font-size:12px;color:var(--text-muted);">${(d=>(d?(d.getDate()+` `+["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]+` `+d.getFullYear()):"—"))(c.date?new Date(c.date.split("T")[0]+"T12:00:00"):null)}</td>
+    </tr>`).join('');
+  }
+  showView('recruiter');
+}
+
+// ── RECRUITER CHART MODAL ─────────────────────────────
+function openRecruiterChartModal() {
+  chartCurrentType = 'recruiter';
+  chartCurrentPeriod = 'week';
+  const meta = { soundariya: { name:'Soundariya', keys:['Sowndarya','Soundariya'] }, tharshini: { name:'Tharshini', keys:['Tharshini'] } };
+  const m = meta[curRecruiterKey];
+  document.getElementById('chart-modal-title').textContent = (m?.name||curRecruiterKey) + ' — Performance Report';
+  document.getElementById('chart-modal-sub').textContent = 'Candidate status breakdown by period';
+  document.getElementById('chart-modal-overlay').classList.add('open');
+  document.getElementById('period-week').classList.add('active');
+  document.getElementById('period-month').classList.remove('active');
+  renderChartForRecruiter('week');
+}
+
+function downloadRecruiterCandidatesExcel() {
+  const meta = { soundariya: { name:"Soundariya", keys:["Sowndarya","Soundariya"] }, tharshini: { name:"Tharshini", keys:["Tharshini"] } };
+  const m = meta[curRecruiterKey] || { name: curRecruiterKey, keys: [curRecruiterKey] };
+  const cands = allCandidates.filter(c => m.keys.some(k => c.recruiter_name?.includes(k)));
+  if (!cands.length) { alert("No candidates found for " + m.name); return; }
+  const headers = ["SNO","Name","Email","Contact","Job","Status","Follow-Up Date","Notes","Added Date"];
+  const rows = cands.map((c,i) => [
+    i+1,
+    c.name||"",
+    c.email||"",
+    c.contact||c.phone||"",
+    c.job||c.job_title||"",
+    c.status||"",
+    c.follow_up_date||c.followup||"",
+    (c.notes||"").replace(/,/g,";"),
+    c.date||c.added_date||c.created_at||""
+  ]);
+  const csv = [headers,...rows].map(r=>r.map(v=>'"'+String(v).replace(/"/g,"\'")+'"').join(",")).join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8;"}));
+  a.download = m.name+"_All_Candidates_"+new Date().toISOString().slice(0,10)+".csv";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+function renderChartForRecruiter(period) {
+  chartCurrentPeriod = period;
+  const meta = { soundariya: { name:'Soundariya', keys:['Sowndarya','Soundariya'] }, tharshini: { name:'Tharshini', keys:['Tharshini'] } };
+  const m = meta[curRecruiterKey] || { name: curRecruiterKey, keys: [curRecruiterKey] };
+  const cands = allCandidates.filter(c => m.keys.some(k => c.recruiter_name?.includes(k)));
+
+  const now = new Date();
+  let filtered;
+  let periodLabel;
+  if (period === 'week') {
+    const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7);
+    filtered = cands.filter(c => c.date && new Date(c.date) >= weekAgo);
+    periodLabel = 'Last 7 Days';
+  } else {
+    filtered = cands.filter(c => {
+      if (!c.date) return false;
+      const d = new Date(c.date);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
+    periodLabel = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+  }
+
+  document.getElementById('chart-period-label').textContent = periodLabel;
+
+  const statuses = ['fresh','followups','interested','notinterested','scheduled','submitted'];
+  const labels = ['Fresh','Follow-ups','Interested','Not Interested','Scheduled','Submitted'];
+  const colors = ['#aab4c4','#1F9A94','#27ae60','#e74c3c','#8e44ad','#1a5276'];
+  const counts = statuses.map(s => filtered.filter(c => c.status === s).length);
+  const convertedCount = filtered.filter(c => c.registered).length;
+  labels.push('Converted'); colors.push('#b8860b'); counts.push(convertedCount);
+
+  chartCurrentData = { labels, counts, colors, periodLabel, recruiterName: m.name, filtered };
+  renderBarChart(labels, counts, colors, m.name + ' — ' + periodLabel);
+  renderChartTable(labels, counts, filtered.length);
+}
+
+function renderChartForInterviewer(period) {
+  chartCurrentPeriod = period;
+  const scheduled = allCandidates.filter(c => c.status === 'scheduled');
+  const submitted  = allCandidates.filter(c => c.status === 'submitted');
+
+  const now = new Date();
+  let filteredSched, filteredSubm;
+  let periodLabel;
+
+  const filterByPeriod = (arr) => {
+    if (period === 'week') {
+      const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7);
+      return arr.filter(c => c.date && new Date(c.date) >= weekAgo);
+    } else {
+      return arr.filter(c => {
+        if (!c.date) return false;
+        const d = new Date(c.date);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      });
+    }
+  };
+
+  filteredSched = filterByPeriod(scheduled);
+  filteredSubm  = filterByPeriod(submitted);
+  periodLabel   = period === 'week' ? 'Last 7 Days' : now.toLocaleString('default',{month:'long',year:'numeric'});
+
+  document.getElementById('chart-period-label').textContent = periodLabel;
+
+  const labels = ['Scheduled','Submitted to HR'];
+  const counts = [filteredSched.length, filteredSubm.length];
+  const colors = ['#8e44ad','#1F9A94'];
+
+  chartCurrentData = { labels, counts, colors, periodLabel, recruiterName: 'Interviewer', filtered: [...filteredSched,...filteredSubm] };
+  renderBarChart(labels, counts, colors, 'Interviewer · ' + periodLabel);
+  renderChartTable(labels, counts, filteredSched.length + filteredSubm.length);
+}
+
+function renderBarChart(labels, counts, colors, title) {
+  const canvas = document.getElementById('reportChart');
+  if (reportChartInstance) { reportChartInstance.destroy(); reportChartInstance = null; }
+  reportChartInstance = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Candidates',
+        data: counts,
+        backgroundColor: colors.map(c => c + 'CC'),
+        borderColor: colors,
+        borderWidth: 2,
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false },
+        title: { display: true, text: title, font: { size: 13, weight: '700' }, color: '#162E5A' },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} candidates` } }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#e4eaf2' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+function renderChartTable(labels, counts, total) {
+  const wrap = document.getElementById('chart-data-table');
+  wrap.innerHTML = `
+    <div style="font-size:12px;font-weight:700;color:var(--text-tag);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">Data Table</div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead><tr style="background:var(--bg-role);">
+        <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-tag);border-bottom:1px solid var(--border-div);">Status</th>
+        <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-tag);border-bottom:1px solid var(--border-div);">Count</th>
+        <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-tag);border-bottom:1px solid var(--border-div);">% of Total</th>
+      </tr></thead>
+      <tbody>
+        ${labels.map((lbl,i) => `<tr>
+          <td style="padding:8px 12px;border-bottom:1px solid var(--border-div);">${lbl}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid var(--border-div);text-align:right;font-weight:700;">${counts[i]}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid var(--border-div);text-align:right;color:var(--text-muted);">${total > 0 ? ((counts[i]/total)*100).toFixed(1) : '0.0'}%</td>
+        </tr>`).join('')}
+        <tr style="background:var(--bg-role);font-weight:700;">
+          <td style="padding:8px 12px;">Total</td>
+          <td style="padding:8px 12px;text-align:right;">${counts.reduce((a,b)=>a+b,0)}</td>
+          <td style="padding:8px 12px;text-align:right;">100%</td>
+        </tr>
+      </tbody>
+    </table>`;
+}
+
+function switchPeriod(period) {
+  chartCurrentPeriod = period;
+  document.getElementById('period-week').classList.toggle('active', period === 'week');
+  document.getElementById('period-month').classList.toggle('active', period === 'month');
+  if (chartCurrentType === 'recruiter') renderChartForRecruiter(period);
+  else renderChartForInterviewer(period);
+}
+
+function closeChartModal() {
+  document.getElementById('chart-modal-overlay').classList.remove('open');
+  if (reportChartInstance) { reportChartInstance.destroy(); reportChartInstance = null; }
+}
+
+function downloadReportExcel() {
+  const { labels, counts, periodLabel, recruiterName } = chartCurrentData;
+  if (!labels) { showToast('No data.', 'err'); return; }
+  const rows = labels.map((lbl, i) => ({ 'Status': lbl, 'Count': counts[i] }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{ wch: 20 }, { wch: 10 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Report');
+  const fname = `${recruiterName}_${periodLabel}_Report_${new Date().toISOString().split('T')[0]}.xlsx`.replace(/\s+/g,'_');
+  XLSX.writeFile(wb, fname);
+  showToast('Report downloaded ✓', 'ok');
+}
+
+function downloadReportPNG() {
+  const canvas = document.getElementById('reportChart');
+  const link = document.createElement('a');
+  link.href = canvas.toDataURL('image/png');
+  const { recruiterName, periodLabel } = chartCurrentData;
+  link.download = `${(recruiterName||'Report').replace(/\s+/g,'_')}_${(periodLabel||'').replace(/\s+/g,'_')}_Chart.png`;
+  link.click();
+  showToast('Chart PNG downloaded ✓', 'ok');
+}
+
+// ── INTERVIEWER VIEW ──────────────────────────────────
+function showInterviewerView() {
+  const scheduled = allCandidates.filter(c=>c.status==='scheduled');
+  const submitted  = allCandidates.filter(c=>c.status==='submitted');
+  const now = new Date();
+
+  const isThisWeek = c => {
+    if (!c.date) return false;
+    const d = new Date(c.date); const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate()-7);
+    return d >= weekAgo;
+  };
+  const isThisMonth = c => {
+    if (!c.date) return false;
+    const d = new Date(c.date);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  };
+
+  const followups = allCandidates.filter(c=>c.status==='followups'||c.status==='interested');
+
+  const schedMonth  = scheduled.filter(isThisMonth).length;
+  const schedWeek   = scheduled.filter(isThisWeek).length;
+  const followMonth = followups.filter(isThisMonth).length;
+  const followWeek  = followups.filter(isThisWeek).length;
+  const totalMonth  = allCandidates.filter(isThisMonth).length;
+  const totalWeek   = allCandidates.filter(isThisWeek).length;
+  const submitMonth = submitted.filter(isThisMonth).length;
+  const submitWeek  = submitted.filter(isThisWeek).length;
+
+  document.getElementById('int-8cards').innerHTML = `
+    <div class="int-stat-card"><div class="lbl" style="color:var(--dark-blue);">Total — Month</div><div class="num" style="color:var(--dark-blue);">${totalMonth}</div><div class="sub">This month</div></div>
+    <div class="int-stat-card"><div class="lbl" style="color:var(--teal);">Follow-ups — Month</div><div class="num" style="color:var(--teal);">${followMonth}</div><div class="sub">This month</div></div>
+    <div class="int-stat-card"><div class="lbl" style="color:#8e44ad;">Scheduled — Month</div><div class="num" style="color:#8e44ad;">${schedMonth}</div><div class="sub">This month</div></div>
+    <div class="int-stat-card"><div class="lbl" style="color:#27ae60;">Submitted — Month</div><div class="num" style="color:#27ae60;">${submitMonth}</div><div class="sub">This month</div></div>
+    <div class="int-stat-card"><div class="lbl" style="color:var(--mid-blue);">Total — Week</div><div class="num" style="color:var(--mid-blue);">${totalWeek}</div><div class="sub">Last 7 days</div></div>
+    <div class="int-stat-card"><div class="lbl" style="color:var(--teal);">Follow-ups — Week</div><div class="num" style="color:var(--teal);">${followWeek}</div><div class="sub">Last 7 days</div></div>
+    <div class="int-stat-card"><div class="lbl" style="color:#8e44ad;">Scheduled — Week</div><div class="num" style="color:#8e44ad;">${schedWeek}</div><div class="sub">Last 7 days</div></div>
+    <div class="int-stat-card"><div class="lbl" style="color:#27ae60;">Submitted — Week</div><div class="num" style="color:#27ae60;">${submitWeek}</div><div class="sub">Last 7 days</div></div>`;
+
+  const tb = document.getElementById('int-cands-tbody');
+  if (!scheduled.length) { tb.innerHTML = '<tr><td colspan="7"><div class="empty"><p>No scheduled candidates.</p></div></td></tr>'; }
+  else {
+    tb.innerHTML = scheduled.map((c,i) => `<tr>
+      <td style="color:var(--text-muted);font-size:12px;">${i+1}</td>
+      <td><strong>${esc(c.name)}</strong></td>
+      <td style="font-size:12px;">${esc(c.recruiter_name||'—')}</td>
+      <td style="font-size:12px;">${esc(c.contact)}</td>
+      <td style="font-size:12px;">${esc(c.job||'—')}</td>
+      <td style="font-size:12px;">${c.followupDate ? "📅 " + c.followupDate.split("T")[0] : "—"}</td>
+      <td><span class="badge b-purple">Scheduled</span></td>
+    </tr>`).join('');
+  }
+  showView('interviewer');
+}
+
+function openInterviewerChartModal() {
+  chartCurrentType = 'interviewer';
+  chartCurrentPeriod = 'week';
+  document.getElementById('chart-modal-title').textContent = 'Interviewer Report';
+  document.getElementById('chart-modal-sub').textContent = 'Scheduled & Submitted breakdown by period';
+  document.getElementById('chart-modal-overlay').classList.add('open');
+  document.getElementById('period-week').classList.add('active');
+  document.getElementById('period-month').classList.remove('active');
+  renderChartForInterviewer('week');
+}
+
+// ── HR VIEW ───────────────────────────────────────────
+function showHRView() {
+  const SLBL = { registered:'Registered',bgv:'BGV',contract:'Contract',training:'Training',placement_followup:'Placement F/U',placed:'Placed' };
+  const SBDG = { registered:'b-blue',bgv:'b-purple',contract:'b-orange',training:'b-gray',placement_followup:'b-teal',placed:'b-green' };
+  const byStage = s => placementPipeline.filter(c=>c.stage===s).length;
+  document.getElementById('hr-kpi-row').innerHTML = `
+    <div class="kpi-big"><div class="kpi-big-lbl">Total Pipeline</div><div class="kpi-big-num">${placementPipeline.length}</div><div class="kpi-big-sub">All placement stages</div></div>
+    <div class="kpi-card" style="border-top:3px solid #2980b9;"><div class="kpi-c-lbl" style="color:#2980b9;">Registered</div><div class="kpi-c-num" style="color:#2980b9;">${byStage('registered')}</div></div>
+    <div class="kpi-card" style="border-top:3px solid #8e44ad;"><div class="kpi-c-lbl" style="color:#8e44ad;">BGV</div><div class="kpi-c-num" style="color:#8e44ad;">${byStage('bgv')}</div></div>
+    <div class="kpi-card" style="border-top:3px solid #e67e22;"><div class="kpi-c-lbl" style="color:#e67e22;">Contract</div><div class="kpi-c-num" style="color:#e67e22;">${byStage('contract')}</div></div>
+    <div class="kpi-card" style="border-top:3px solid #2c3e50;"><div class="kpi-c-lbl" style="color:#2c3e50;">Training</div><div class="kpi-c-num" style="color:#2c3e50;">${byStage('training')}</div></div>
+    <div class="kpi-card" style="border-top:3px solid #27ae60;"><div class="kpi-c-lbl" style="color:#27ae60;">Placed ✓</div><div class="kpi-c-num" style="color:#27ae60;">${byStage('placed')}</div></div>`;
+
+  const tb = document.getElementById('hr-pipeline-tbody');
+  if (!placementPipeline.length) { tb.innerHTML = '<tr><td colspan="7"><div class="empty"><p>No candidates in pipeline.</p></div></td></tr>'; }
+  else {
+    tb.innerHTML = placementPipeline.map((c,i) => {
+      const bgvCount = Object.keys(c.bgvDocs||{}).filter(k=>c.bgvDocs[k]).length;
+      const trainingDone = (c.trainingProgress||[]).length;
+      return `<tr>
+        <td style="color:var(--text-muted);font-size:12px;">${i+1}</td>
+        <td><strong>${esc(c.name)}</strong></td>
+        <td><span class="badge b-teal">${esc(c.country||'—')}</span></td>
+        <td><span class="badge ${SBDG[c.stage]||'b-gray'}">${SLBL[c.stage]||c.stage}</span></td>
+        <td style="font-size:12px;">${bgvCount}/8 docs</td>
+        <td style="font-size:12px;">${trainingDone}/7 stages</td>
+        <td style="font-size:12px;font-weight:600;color:#27ae60;">${c.placedCompany||'—'}</td>
+      </tr>`;
+    }).join('');
+  }
+  showView('hr');
+}
+
+// ── CLIENTS VIEW ──────────────────────────────────────
+function renderClientsView() {
+  const totalOpenings = allClients.reduce((s,c)=>s+(parseInt(c.openings)||0),0);
+  const TYPE_BADGE = { IT:'b-teal','Non-IT':'b-blue','Manufacturing':'b-orange' };
+  document.getElementById('client-kpi-row').innerHTML = `
+    <div class="kpi-big"><div class="kpi-big-lbl">Total Clients</div><div class="kpi-big-num">${allClients.length}</div><div class="kpi-big-sub">${totalOpenings} total openings</div></div>
+    <div class="kpi-card" style="border-top:3px solid var(--teal);"><div class="kpi-c-lbl" style="color:var(--teal);">IT</div><div class="kpi-c-num" style="color:var(--teal);">${allClients.filter(c=>c.type==='IT').length}</div></div>
+    <div class="kpi-card" style="border-top:3px solid #1a5276;"><div class="kpi-c-lbl" style="color:#1a5276;">Non-IT</div><div class="kpi-c-num" style="color:#1a5276;">${allClients.filter(c=>c.type==='Non-IT').length}</div></div>
+    <div class="kpi-card" style="border-top:3px solid #e67e22;"><div class="kpi-c-lbl" style="color:#e67e22;">Mfg</div><div class="kpi-c-num" style="color:#e67e22;">${allClients.filter(c=>c.type==='Manufacturing').length}</div></div>
+    <div class="kpi-card" style="border-top:3px solid #27ae60;"><div class="kpi-c-lbl" style="color:#27ae60;">Openings</div><div class="kpi-c-num" style="color:#27ae60;">${totalOpenings}</div></div>`;
+  const tb = document.getElementById('clients-tbody');
+  if (!allClients.length) { tb.innerHTML = '<tr><td colspan="8"><div class="empty"><p>No clients yet.</p></div></td></tr>'; }
+  else {
+    tb.innerHTML = allClients.map((c,i) => `<tr>
+      <td style="color:var(--text-muted);font-size:12px;">${i+1}</td>
+      <td><strong style="color:var(--dark-blue);">${esc(c.companyName)}</strong></td>
+      <td><span class="badge ${TYPE_BADGE[c.type]||'b-gray'}">${esc(c.type||'—')}</span></td>
+      <td style="font-size:12px;">${esc(c.contactPerson||'—')}</td>
+      <td style="font-size:12px;">${esc(c.contactNumber||'—')}</td>
+      <td style="text-align:center;"><span class="badge b-teal">${c.openings||0}</span></td>
+      <td style="font-size:12px;max-width:200px;color:var(--text-tag);">${c.requirements?esc(String(c.requirements).substring(0,60))+'…':'—'}</td>
+      <td style="font-size:12px;color:var(--text-muted);">${esc((c.address||'').substring(0,30))}</td>
+    </tr>`).join('');
+  }
+}
+
+// ── ADD CANDIDATE MODAL ───────────────────────────────
+function openAddCandidateModal() {
+  document.getElementById('add-cand-overlay').style.display = 'flex';
+  ['acm-name','acm-email','acm-contact','acm-job','acm-qual','acm-salary'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
+}
+
+function closeAddCandidateModal() { document.getElementById('add-cand-overlay').style.display = 'none'; }
+
+async function doAddCandidateFromAdmin() {
+  const name    = (document.getElementById('acm-name').value || '').trim();
+  const email   = (document.getElementById('acm-email').value || '').trim();
+  const contact = (document.getElementById('acm-contact').value || '').trim();
+  const job     = (document.getElementById('acm-job').value || '').trim();
+  const qual    = (document.getElementById('acm-qual').value || '').trim();
+  const salary  = (document.getElementById('acm-salary').value || '').trim();
+  if (!name)    { showToast('Candidate name is required.', 'err'); return; }
+  if (!email || !email.includes('@')) { showToast('Valid email required.', 'err'); return; }
+  if (!contact || contact.length < 10) { showToast('Contact must be at least 10 digits.', 'err'); return; }
+  try {
+    const res = await fetch('/api/candidates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-session-token': TOKEN },
+      body: JSON.stringify({ name, email, contact, job: job||'—', qual: qual||'—', salary: salary||'—', status: 'fresh', expType: 'Fresher', date: new Date().toISOString().split('T')[0] })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast(name + ' added successfully!', 'ok');
+      closeAddCandidateModal();
+      await loadAndRenderFreshDump();
+    } else { showToast(data.error || 'Failed to add candidate.', 'err'); }
+  } catch(e) { showToast('Network error.', 'err'); }
+}
+
+// ── VIEW ROUTING ─────────────────────────────────────
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  const el = document.getElementById('view-'+name);
+  if (el) el.classList.add('active');
+  document.querySelectorAll('.sb-item,.sb-sub-item').forEach(x=>x.classList.remove('active'));
+  const nav = document.getElementById('nav-'+name);
+  if (nav) nav.classList.add('active');
+  if (name === 'clients')   renderClientsView();
+  if (name === 'freshdump') renderFreshDump();
+}
+
+function toggleDrop(key) {
+  dropState[key] = !dropState[key];
+  document.getElementById('sb-'+key+'-toggle')?.classList.toggle('open', dropState[key]);
+  document.getElementById('sb-'+key+'-items')?.classList.toggle('open', dropState[key]);
+}
+
+// ── CLOCK ─────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const mons = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+  const ap = h>=12?'PM':'AM'; h = h%12||12;
+  const el = document.getElementById('tb-datetime');
+  if (el) el.textContent = days[now.getDay()]+', '+now.getDate()+' '+mons[now.getMonth()]+' '+now.getFullYear()+'  ·  '+pad(h)+':'+pad(m)+':'+pad(s)+' '+ap;
+  const greet = document.getElementById('tb-greeting');
+  if (greet) { const hr = new Date().getHours(); greet.innerHTML = (hr<12?'Good Morning':hr<16?'Good Afternoon':'Good Evening')+', <span>Admin</span>!'; }
+}
+
+function updateLastRefresh() {
+  const now = new Date();
+  const el = document.getElementById('last-refresh');
+  if (el) el.textContent = 'Updated: '+pad(now.getHours()%12||12)+':'+pad(now.getMinutes())+' '+(now.getHours()>=12?'PM':'AM');
+}
+
+function doLogout() {
+  if (confirm('Logout from Admin?')) {
+    // Mark logout in attendance
+    fetch('/api/attendance/logout', {
+      method: 'POST',
+      headers: { 'x-session-token': TOKEN }
+    }).catch(()=>{});
+    sessionStorage.clear();
+    window.location.href='login.html';
+  }
+}
+
+// ── ATTENDANCE REPORT ─────────────────────────────────
+let attPeriod = 'week';
+let attWeekOffset = 0;
+let attYear  = new Date().getFullYear();
+let attMonth = new Date().getMonth() + 1;
+let attReportData = null;
+
+function openAttendanceReportModal() {
+  document.getElementById('att-report-overlay').style.display = 'flex';
+  attPeriod = 'week'; attWeekOffset = 0;
+  attYear = new Date().getFullYear(); attMonth = new Date().getMonth() + 1;
+  syncAttPeriodUI();
+  loadAttendanceReport();
+}
+
+function closeAttendanceReport() {
+  document.getElementById('att-report-overlay').style.display = 'none';
+}
+
+function switchAttPeriod(p) {
+  attPeriod = p;
+  document.getElementById('att-btn-week').classList.toggle('active', p==='week');
+  document.getElementById('att-btn-month').classList.toggle('active', p==='month');
+  document.getElementById('att-week-nav').style.display  = p==='week'  ? 'flex' : 'none';
+  document.getElementById('att-month-nav').style.display = p==='month' ? 'flex' : 'none';
+  loadAttendanceReport();
+}
+
+function attWeekShift(d)  { attWeekOffset += d; loadAttendanceReport(); }
+function attMonthShift(d) {
+  attMonth += d;
+  if (attMonth > 12) { attMonth = 1; attYear++; }
+  if (attMonth < 1)  { attMonth = 12; attYear--; }
+  loadAttendanceReport();
+}
+
+function syncAttPeriodUI() {
+  document.getElementById('att-week-nav').style.display  = 'flex';
+  document.getElementById('att-month-nav').style.display = 'none';
+}
+
+async function loadAttendanceReport() {
+  const body = document.getElementById('att-report-body');
+  body.innerHTML = '<p style="color:var(--text-muted);font-size:13px;padding:10px 0;">Loading…</p>';
+
+  let url = `/api/attendance/report?period=${attPeriod}&week_offset=${attWeekOffset}&year=${attYear}&month=${attMonth}`;
+  try {
+    const res  = await fetch(url, { headers: { 'x-session-token': TOKEN } });
+    const data = await res.json();
+    if (!data.success) { body.innerHTML = `<p style="color:var(--err);">${data.error}</p>`; return; }
+    attReportData = data;
+    renderAttendanceReport(data);
+  } catch(e) {
+    body.innerHTML = `<p style="color:var(--err);">Failed to load report.</p>`;
+  }
+}
+
+const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function renderAttendanceReport(data) {
+  const s = new Date(data.startDate), e = new Date(data.endDate);
+  const rangeStr = `${s.getDate()} ${MONTHS_SHORT[s.getMonth()]} – ${e.getDate()} ${MONTHS_SHORT[e.getMonth()]} ${e.getFullYear()}`;
+  document.getElementById('att-report-range').textContent = rangeStr;
+  if (data.period === 'week') {
+    document.getElementById('att-week-label').textContent = rangeStr;
+  } else {
+    document.getElementById('att-month-label').textContent = `${MONTHS_SHORT[attMonth-1]} ${attYear}`;
+  }
+
+  let totalPresent = 0, totalAbsent = 0, totalWorked = 0, totalShortfall = 0;
+  data.report.forEach(r => {
+    totalPresent   += r.presentDays;
+    totalAbsent    += r.absentDays;
+    totalWorked    += r.totalWorkedMins;
+    totalShortfall += r.totalShortfallMins;
+  });
+  document.getElementById('att-report-kpi').innerHTML = `
+    <div class="kpi-card" style="min-width:110px;border-top:3px solid #27ae60;padding:10px 14px;">
+      <div class="kpi-c-lbl" style="color:#27ae60;">Present Days</div>
+      <div class="kpi-c-num" style="color:#27ae60;font-size:24px;">${totalPresent}</div>
+    </div>
+    <div class="kpi-card" style="min-width:110px;border-top:3px solid #e74c3c;padding:10px 14px;">
+      <div class="kpi-c-lbl" style="color:#e74c3c;">Absent Days</div>
+      <div class="kpi-c-num" style="color:#e74c3c;font-size:24px;">${totalAbsent}</div>
+    </div>
+    <div class="kpi-card" style="min-width:160px;border-top:3px solid var(--teal);padding:10px 14px;">
+      <div class="kpi-c-lbl" style="color:var(--teal);">Total Hours Worked</div>
+      <div class="kpi-c-num" style="color:var(--teal);font-size:22px;">${fmtMinsJS(totalWorked)}</div>
+    </div>
+    <div class="kpi-card" style="min-width:160px;border-top:3px solid #e67e22;padding:10px 14px;">
+      <div class="kpi-c-lbl" style="color:#e67e22;">Total Shortfall</div>
+      <div class="kpi-c-num" style="color:#e67e22;font-size:22px;">${fmtMinsJS(totalShortfall)}</div>
+    </div>`;
+
+  const body = document.getElementById('att-report-body');
+  body.innerHTML = data.report.map(staff => {
+    const avgPct = Math.min(100, Math.round((staff.avgWorkedMins / 540) * 100));
+    const avgColor = avgPct >= 100 ? '#27ae60' : avgPct >= 60 ? '#e67e22' : '#e74c3c';
+
+    const dayRows = staff.days.map(d => {
+      if (d.status === 'absent') {
+        return `<tr style="background:#fff5f5;">
+          <td style="font-size:12px;color:var(--text-muted);">${fmtDate(d.date)}</td>
+          <td colspan="5" style="color:#e74c3c;font-size:12px;font-weight:600;">Absent</td>
+        </tr>`;
+      }
+      const pct = Math.min(100, Math.round((d.workedMins/540)*100));
+      const bc  = pct >= 100 ? '#27ae60' : pct >= 60 ? '#e67e22' : '#e74c3c';
+      return `<tr>
+        <td style="font-size:12px;font-weight:600;">${fmtDate(d.date)}</td>
+        <td style="font-size:12px;">${d.loginTime||'—'}</td>
+        <td style="font-size:12px;">${d.logoutTime||'—'}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:12px;font-weight:700;color:${bc};min-width:80px;">${d.workedFormatted}</span>
+            <div style="flex:1;height:6px;background:#e4eaf2;border-radius:3px;overflow:hidden;min-width:60px;">
+              <div style="height:100%;width:${pct}%;background:${bc};border-radius:3px;"></div>
+            </div>
+            <span style="font-size:10px;color:var(--text-muted);">${pct}%</span>
+          </div>
+        </td>
+        <td style="font-size:12px;">${d.breakCount > 0 ? d.breakCount+' ('+d.breakMins+' min)' : '—'}</td>
+        <td>${d.targetMet ? '<span class="badge b-green">✓ Met</span>' : `<span class="badge b-red">-${fmtMinsJS(d.shortfallMins)}</span>`}</td>
+      </tr>`;
+    }).join('');
+
+    return `<div style="margin-bottom:20px;border:1px solid var(--border-btn);border-radius:var(--radius);overflow:hidden;">
+      <div style="padding:14px 18px;background:var(--bg-role);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;cursor:pointer;"
+        onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--mid-blue));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;">
+            ${staff.name.charAt(0)}
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:var(--dark-blue);">${esc(staff.name)}</div>
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;">${staff.role} · Click to expand</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;">
+          <div style="text-align:center;"><div style="font-size:18px;font-weight:700;color:#27ae60;">${staff.presentDays}</div><div style="font-size:10px;color:var(--text-muted);">Present</div></div>
+          <div style="text-align:center;"><div style="font-size:18px;font-weight:700;color:#e74c3c;">${staff.absentDays}</div><div style="font-size:10px;color:var(--text-muted);">Absent</div></div>
+          <div style="text-align:center;"><div style="font-size:16px;font-weight:700;color:var(--teal);">${staff.totalWorkedFormatted}</div><div style="font-size:10px;color:var(--text-muted);">Total Hours</div></div>
+          <div style="text-align:center;"><div style="font-size:16px;font-weight:700;color:${avgColor};">${staff.avgWorkedFormatted}</div><div style="font-size:10px;color:var(--text-muted);">Avg / Day</div></div>
+          <div style="text-align:center;"><div style="font-size:16px;font-weight:700;color:#e67e22;">${staff.totalShortfallFormatted}</div><div style="font-size:10px;color:var(--text-muted);">Shortfall</div></div>
+        </div>
+      </div>
+      <div style="display:none;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead><tr style="background:var(--bg-role);">
+            <th style="padding:9px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-tag);border-bottom:1px solid var(--border-div);">Date</th>
+            <th style="padding:9px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-tag);border-bottom:1px solid var(--border-div);">Login</th>
+            <th style="padding:9px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-tag);border-bottom:1px solid var(--border-div);">Logout</th>
+            <th style="padding:9px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-tag);border-bottom:1px solid var(--border-div);">Hours Worked</th>
+            <th style="padding:9px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-tag);border-bottom:1px solid var(--border-div);">Breaks</th>
+            <th style="padding:9px 14px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-tag);border-bottom:1px solid var(--border-div);">9hr Target</th>
+          </tr></thead>
+          <tbody>${dayRows}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function fmtDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  return `${days[d.getDay()]} ${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`;
+}
+
+function downloadAttendanceExcel() {
+  if (!attReportData) { showToast('No data to download.','err'); return; }
+  const rows = [];
+  attReportData.report.forEach(staff => {
+    staff.days.forEach(d => {
+      rows.push({
+        'Staff Name':     staff.name,
+        'Role':           staff.role,
+        'Date':           d.date,
+        'Status':         d.status,
+        'Login Time':     d.loginTime  || '',
+        'Logout Time':    d.logoutTime || '',
+        'Hours Worked':   d.workedFormatted || '',
+        'Break Count':    d.breakCount || 0,
+        'Break Mins':     d.breakMins  || 0,
+        '9hr Target Met': d.targetMet  ? 'Yes' : 'No',
+        'Shortfall':      d.shortfallMins > 0 ? fmtMinsJS(d.shortfallMins) : '',
+      });
+    });
+  });
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = Object.keys(rows[0]||{}).map(() => ({ wch: 16 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
+  const fname = `Attendance_${attPeriod}_${attReportData.startDate}_to_${attReportData.endDate}.xlsx`;
+  XLSX.writeFile(wb, fname);
+  showToast('Downloaded ✓','ok');
+}
+
+// ── UTILS ─────────────────────────────────────────────
+function setEl(id,v){ const el=document.getElementById(id); if(el) el.textContent=v; }
+function pad(n){ return String(n).padStart(2,'0'); }
+function esc(str){ if(!str)return''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function showToast(msg,type){ const t=document.getElementById('toast'); if(!t)return; t.textContent=msg; t.className='show'+(type?' '+type:''); clearTimeout(toastTm); toastTm=setTimeout(()=>t.classList.remove('show'),2800); }
+</script>
+</body>
+</html>

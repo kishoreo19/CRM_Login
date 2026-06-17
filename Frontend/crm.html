@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet"/>
+  <title>The JobSync — Recruiter CRM</title>
+  <link rel="stylesheet" href="crm.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+ 
+<!-- IDLE DIALOG -->
+<div id="idle-overlay">
+  <div id="idle-dialog">
+    <div class="idle-icon">⏱️</div>
+    <div class="idle-title">Are you still there?</div>
+    <div class="idle-msg">You've been idle for <strong>10 minutes</strong> — no new call has been logged.</div>
+    <button class="idle-resume-btn" onclick="dismissIdle()">Yes, I'm here — Resume</button>
+  </div>
+</div>
+ 
+<!-- BREAK BADGE -->
+<div id="brk-badge">
+  <div class="brk-lbl" id="brk-lbl-txt">Short Break</div>
+  <div class="brk-cd" id="brk-cd">15:00</div>
+  <button id="brk-stop-btn" onclick="activityTimer ? stopActivity() : clearBreak()" style="margin-top:6px;padding:3px 10px;border:none;border-radius:20px;background:rgba(255,255,255,0.25);color:#fff;font-size:11px;font-weight:600;cursor:pointer;">⏹ Stop</button>
+</div>
+ 
+<!-- TOAST -->
+<div id="toast"></div>
+ 
+<!-- PROFILE DROPDOWN -->
+<div id="p-drop">
+  <div class="pd-head">
+    <div class="pd-ava-lg" id="pd-ava-lg">
+      <img src="WhatsApp Image 2026-04-03 at 10.09.47 AM.jpeg" alt="profile">
+    </div>
+    <div class="pd-nm" id="pd-nm">Sowndarya</div>
+    <div class="pd-role">Talent Acquisition · Recruiter</div>
+  </div>
+  <div class="pd-body">
+    <div class="pd-row"><span class="pd-lbl">Department</span><span class="pd-val">HR &amp; Talent</span></div>
+    <div class="pd-row"><span class="pd-lbl">Date of Join</span><span class="pd-val" id="pd-doj">12 Jan 2024</span></div>
+    <div class="pd-row"><span class="pd-lbl">Employee ID</span><span class="pd-val" id="pd-empid">EMP-001</span></div>
+    <div class="pd-row"><span class="pd-lbl">Login Time</span><span class="pd-val" id="pd-login">—</span></div>
+  </div>
+  <!-- LOGOUT BUTTON — no switch profile -->
+  <div class="pd-sw">
+    <button onclick="logoutUser()" style="
+      width:100%;padding:11px;background:#e74c3c;color:white;border:none;
+      border-radius:8px;cursor:pointer;font-weight:700;font-size:13px;
+      letter-spacing:1px;transition:background .2s;
+    " onmouseover="this.style.background='#c0392b'" onmouseout="this.style.background='#e74c3c'">
+      Logout
+    </button>
+  </div>
+</div>
+ 
+<!-- ACTION MODAL -->
+<div class="overlay" id="mod-overlay">
+  <div class="modal">
+    <div class="modal-hd">
+      <span class="modal-ttl" id="mod-ttl">Candidate Details</span>
+      <button class="modal-x" onclick="closeMod()">&#215;</button>
+    </div>
+    <div class="modal-bd">
+      <div class="f-grid" id="mod-fields"></div>
+    </div>
+    <div class="modal-ft" id="mod-ft">
+      <button class="btn btn-outline" onclick="closeMod()">Cancel</button>
+      <button class="btn btn-teal" id="mod-action-btn">Save</button>
+    </div>
+  </div>
+</div>
+ 
+<!-- SCHEDULE MODAL -->
+<div class="overlay" id="sched-overlay">
+  <div class="modal">
+    <div class="modal-hd">
+      <span class="modal-ttl" id="sched-modal-ttl">Schedule Interview</span>
+      <button class="modal-x" onclick="closeSchedMod()">&#215;</button>
+    </div>
+    <div class="modal-bd">
+      <div class="f-grid" id="sched-fields"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeSchedMod()">Cancel</button>
+      <button class="btn btn-teal" id="sched-action-btn" onclick="doSchedule()">Schedule</button>
+    </div>
+  </div>
+</div>
+ 
+<!-- UPLOAD CONFIRM MODAL -->
+<div class="overlay" id="upload-overlay">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-hd">
+      <span class="modal-ttl">Upload Resume to ScreenIt?</span>
+      <button class="modal-x" onclick="closeUploadModal()">&#215;</button>
+    </div>
+    <div class="modal-bd" style="text-align:center;padding:32px 24px;">
+      <div style="font-size:42px;margin-bottom:12px;">📤</div>
+      <div style="font-size:15px;font-weight:700;color:var(--dark-blue);margin-bottom:8px;" id="upload-cand-name">Candidate Name</div>
+      <div style="font-size:13px;color:var(--text-tag);margin-bottom:24px;">Do you want to upload this candidate's resume to ScreenIt and move them to Interview Follow-up?</div>
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <button class="btn btn-teal" style="min-width:100px;" onclick="doUploadDecision(true)">Yes, Upload</button>
+      </div>
+    </div>
+  </div>
+</div>
+ 
+<!-- DASHBOARD -->
+<div id="dash-inner">
+ 
+  <!-- SIDEBAR -->
+  <nav id="sidebar">
+    <div class="sb-brand">
+      <div class="">
+        <img src="Logo (1) (1).png" alt="JobSync Logo" style="width:28px;height:28px;object-fit:contain;">
+      </div>
+      <span class="sb-name">The JobSync</span>
+    </div>
+ 
+    <div class="sb-group">
+      <div class="sb-group-label">Overview</div>
+      <div class="sb-item active" id="nav-dashboard" onclick="navTo(this,'dashboard')">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h5v5H2zm7 0h5v5H9zM2 9h5v5H2zm7 0h5v5H9z"/></svg>
+        Dashboard
+      </div>
+    </div>
+ 
+    <div class="sb-group">
+      <div class="sb-group-label">Calls</div>
+      <div class="sb-item" id="nav-calls-parent" onclick="toggleSub(this)">
+        <svg viewBox="0 0 16 16" fill="currentColor">
+          <path d="M3.654 1.328a.678.678 0 00-1.015-.063L1.605 2.3c-.483.484-.661 1.169-.45 1.77a17.6 17.6 0 004.168 6.608 17.6 17.6 0 006.608 4.168c.601.211 1.286.033 1.77-.45l1.034-1.034a.678.678 0 00-.063-1.015l-2.307-1.794a.678.678 0 00-.58-.122l-2.19.547a1.745 1.745 0 01-1.657-.459L5.482 8.062a1.745 1.745 0 01-.46-1.657l.548-2.19a.678.678 0 00-.122-.58L3.654 1.328z"/>
+        </svg>
+        Call Logs
+        <span class="sb-arrow">&#9660;</span>
+      </div>
+      <div class="sb-sub" id="calls-sub">
+        <div class="sb-sub-item active" onclick="navCallTab(this,'fresh')">Fresh Dump</div>
+        <div class="sb-sub-item" onclick="navCallTab(this,'followups')">Follow-Ups</div>
+        <div class="sb-sub-item" onclick="navCallTab(this,'rnr')">RNR</div>
+        <div class="sb-sub-item" onclick="navCallTab(this,'callback')">Callback</div>
+        <div class="sb-sub-item" onclick="navCallTab(this,'notinterested')">Not Interested</div>
+        <div class="sb-sub-item" onclick="navCallTab(this,'interested')">Interested</div>
+      </div>
+    </div>
+ 
+    <div class="sb-group">
+      <div class="sb-group-label">Recruitment</div>
+      <div class="sb-item" id="nav-interview-parent" onclick="toggleIntSub(this)">
+        <svg viewBox="0 0 16 16" fill="currentColor">
+          <path d="M1 2.5A2.5 2.5 0 013.5 0h9A2.5 2.5 0 0115 2.5v11A2.5 2.5 0 0112.5 16h-9A2.5 2.5 0 011 13.5v-11zM3.5 1A1.5 1.5 0 002 2.5v11A1.5 1.5 0 003.5 15h9a1.5 1.5 0 001.5-1.5v-11A1.5 1.5 0 0012.5 1h-9zM4 4.5a.5.5 0 01.5-.5h7a.5.5 0 010 1h-7a.5.5 0 01-.5-.5zm0 3a.5.5 0 01.5-.5h7a.5.5 0 010 1h-7a.5.5 0 01-.5-.5zm0 3a.5.5 0 01.5-.5h4a.5.5 0 010 1h-4a.5.5 0 01-.5-.5z"/>
+        </svg>
+        Interview
+        <span class="sb-arrow">&#9660;</span>
+      </div>
+      <div class="sb-sub" id="interview-sub">
+        <div class="sb-sub-item" onclick="navIntTab(this,'followups')">Follow-up</div>
+        <div class="sb-sub-item" onclick="navIntTab(this,'scheduled')">Scheduled</div>
+      </div>
+    </div>
+ 
+    <div class="sb-group">
+      <div class="sb-group-label">Candidates</div>
+      <div class="sb-item" id="nav-scheduled-parent" onclick="toggleSchedSub(this)">
+        <svg viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+          <path d="M8 4a.5.5 0 0 1 .5.5v3.69l2.19 2.19a.5.5 0 0 1-.707.707L7.5 8.707V4.5A.5.5 0 0 1 8 4z"/>
+        </svg>
+        Candidate Status
+        <span class="sb-arrow">&#9660;</span>
+      </div>
+      <div class="sb-sub" id="sched-cand-sub">
+        <div class="sb-sub-item" onclick="navCandTab(this,'registered')">Registered Candidates</div>
+        <div class="sb-sub-item" onclick="navCandTab(this,'unregistered')">Unregistered Candidates</div>
+      </div>
+    </div>
+ 
+    <div style="flex:1;"></div>
+    <div style="padding:14px 18px;border-top:1px solid rgba(255,255,255,.08);">
+      <div style="font-size:11px;color:rgba(255,255,255,.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Recruiter Access</div>
+      <button onclick="openTicketModal()" style="width:100%;padding:8px;background:#e74c3c;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;">🎫 Raise IT Ticket</button>
+    </div>
+  </nav>
+ 
+  <!-- MAIN -->
+  <div id="main-area">
+    <div id="topbar">
+      <div class="tb-title-wrap">
+        <div class="tb-title" id="tb-title"><span id="greeting-text">Good Morning</span>, <span id="greeting-name">Sowndarya</span>!</div>
+        <div class="tb-datetime">
+          <span class="tb-date" id="tb-date-disp">—</span>
+          <span class="tb-time-inline" id="tb-time-disp">—</span>
+        </div>
+      </div>
+      <div class="tb-right">
+        <div class="login-badge">
+          <div class="dot"></div>
+          <span>Logged in at&nbsp;<strong id="login-t-disp">—</strong></span>
+        </div>
+        <button class="brk-btn" id="short-brk-btn" onclick="startBreak('short')">Short Break</button>
+        <button class="brk-btn" id="lunch-brk-btn" onclick="startBreak('lunch')">Lunch Break</button>
+        <button class="brk-btn" id="meeting-btn" onclick="openActivityModal('meeting')">🤝 Meeting</button>
+        <button class="brk-btn" id="training-btn" onclick="openActivityModal('training')">📚 Training</button>
+        <div id="profile-wrap">
+          <div id="profile-btn" onclick="togglePDrop()">
+            <div class="p-ava" id="nav-ava">
+              <img src="WhatsApp Image 2026-04-03 at 10.09.47 AM.jpeg" alt="profile">
+            </div>
+            <span class="p-name" id="nav-pname">Sowndarya</span>
+            <span class="p-caret">&#9660;</span>
+          </div>
+        </div>
+      </div>
+    </div>
+ 
+    <!-- CONTENT -->
+    <div id="content">
+ 
+      <!-- DASHBOARD -->
+      <div class="section active" id="sec-dashboard">
+        <div class="kpi-row">
+          <div class="kpi-big">
+            <div class="kpi-big-lbl">Total No of Calls</div>
+            <div class="kpi-big-num" id="k-total">0</div>
+            <div class="kpi-big-sub">Since joining · <span id="k-days">0</span> days active</div>
+          </div>
+          <div class="kpi-card kpi-clickable" onclick="kpiNav('fresh')">
+            <div class="kpi-c-lbl">Fresh Forms</div>
+            <div class="kpi-c-num" id="k-cb2">0</div>
+          </div>
+          <div class="kpi-card kpi-clickable" onclick="kpiNav('registered')">
+            <div class="kpi-c-lbl">No of Conversions</div>
+            <div class="kpi-c-num" id="k-cb">0</div>
+          </div>
+          <div class="kpi-card kpi-clickable" onclick="kpiNav('interested')">
+            <div class="kpi-c-lbl">Interested</div>
+            <div class="kpi-c-num" id="k-int">0</div>
+          </div>
+          <div class="kpi-card kpi-clickable" onclick="kpiNav('notinterested')">
+            <div class="kpi-c-lbl">Not Interested</div>
+            <div class="kpi-c-num" id="k-ni">0</div>
+          </div>
+          <div class="kpi-card kpi-clickable" onclick="kpiNav('rnr')">
+            <div class="kpi-c-lbl">RNR</div>
+            <div class="kpi-c-num" id="k-rnr">0</div>
+          </div>
+          <div class="kpi-card kpi-clickable" onclick="kpiNav('unregistered')">
+            <div class="kpi-c-lbl">Pending Forms</div>
+            <div class="kpi-c-num" id="k-fu">0</div>
+          </div>
+        </div>
+ 
+        <div class="chart-row">
+          <div class="chart-card">
+            <div class="chart-card-hd">
+              <div class="chart-ttl">Candidate Status Overview</div>
+              <div class="chart-sub">Live distribution of all candidate statuses</div>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="statusPieChart"></canvas>
+            </div>
+          </div>
+          <div class="chart-legend-card">
+            <div class="chart-ttl" style="margin-bottom:16px;">Breakdown</div>
+            <div id="chart-legend-list"></div>
+          </div>
+        </div>
+ 
+        <div class="sec-hd">
+          <div><div class="sec-ttl">Recent Activity</div><div class="sec-sub">Latest processed candidates</div></div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr>
+              <th>Candidate</th><th>Status</th><th>Category</th><th>Notes</th><th>Date</th>
+            </tr></thead>
+            <tbody id="dash-tbody">
+              <tr><td colspan="5"><div class="empty"><p>No activity yet. Start processing calls.</p></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+ 
+      <!-- CALLS -->
+      <div class="section" id="sec-calls">
+        <div class="sec-hd">
+          <div><div class="sec-ttl">Call Logs</div><div class="sec-sub">Manage all candidate interactions</div></div>
+          <button class="btn-add" id="add-cand-btn" onclick="openAddModal()" style="display:none;">
+            <svg viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z"/>
+            </svg>
+            Add Candidate
+          </button>
+        </div>
+        <div class="tab-row" id="call-tabs">
+          <button class="t-btn active" onclick="switchCallTab(this,'fresh')">Fresh Dump <span class="t-cnt" id="cnt-fresh">0</span></button>
+          <button class="t-btn" onclick="switchCallTab(this,'followups')">Follow-Ups <span class="t-cnt" id="cnt-fu">0</span></button>
+          <button class="t-btn" onclick="switchCallTab(this,'rnr')">RNR <span class="t-cnt" id="cnt-rnr">0</span></button>
+          <button class="t-btn" onclick="switchCallTab(this,'callback')">Callback <span class="t-cnt" id="cnt-cb">0</span></button>
+          <button class="t-btn" onclick="switchCallTab(this,'notinterested')">Not Interested <span class="t-cnt" id="cnt-ni2">0</span></button>
+          <button class="t-btn" onclick="switchCallTab(this,'interested')">Interested <span class="t-cnt" id="cnt-int">0</span></button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr id="calls-thead-row">
+              <th>SNO</th><th>Date</th><th>Candidate</th><th>Email</th><th>Contact</th>
+              <th>Qualification</th><th>Job Title</th><th>Exposure</th><th>Exp. Salary</th><th>Action</th>
+            </tr></thead>
+            <tbody id="calls-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+ 
+      <!-- INTERVIEWS -->
+      <div class="section" id="sec-interviews">
+        <div class="sec-hd">
+          <div>
+            <div class="sec-ttl" id="int-section-ttl">Interview — Follow-up</div>
+            <div class="sec-sub" id="int-section-sub">Candidates awaiting follow-up</div>
+          </div>
+        </div>
+        <div class="tab-row" id="int-tabs">
+          <button class="t-btn active" onclick="switchIntTab(this,'followups')">Follow-up <span class="t-cnt" id="int-cnt-fu">0</span></button>
+          <button class="t-btn" onclick="switchIntTab(this,'scheduled')">Scheduled <span class="t-cnt" id="int-cnt-iv">0</span></button>
+        </div>
+        <div class="tbl-wrap">
+          <table id="int-table">
+            <thead id="int-thead"></thead>
+            <tbody id="int-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+ 
+      <!-- CANDIDATE STATUS SECTION -->
+      <div class="section" id="sec-candidates">
+        <div class="sec-hd">
+          <div>
+            <div class="sec-ttl" id="cand-section-ttl">Registered Candidates</div>
+            <div class="sec-sub" id="cand-section-sub">Candidates who have been registered/scheduled</div>
+          </div>
+        </div>
+        <div class="tab-row" id="cand-tabs">
+          <button class="t-btn active" onclick="switchCandTab(this,'registered')">Registered Candidates <span class="t-cnt" id="cand-cnt-reg">0</span></button>
+          <button class="t-btn" onclick="switchCandTab(this,'unregistered')">Unregistered Candidates <span class="t-cnt" id="cand-cnt-unreg">0</span></button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead id="cand-thead"></thead>
+            <tbody id="cand-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+ 
+    </div>
+  </div>
+</div>
+ 
+<script src="api.js"></script>
+<script src="crm.js?v=13"></script>
+<div id="ticket-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+<div style="background:white;border-radius:12px;padding:24px;width:480px;max-width:90%;">
+<h3 style="margin:0 0 16px;color:#2c3e50;">🎫 Raise IT Ticket</h3>
+<input id="tkt-title" placeholder="Title *" style="width:100%;padding:8px;margin-bottom:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;">
+<textarea id="tkt-desc" placeholder="Description *" rows="3" style="width:100%;padding:8px;margin-bottom:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;"></textarea>
+<select id="tkt-cat" style="width:100%;padding:8px;margin-bottom:10px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;">
+<option value="Hardware">Hardware</option>
+<option value="Software">Software</option>
+<option value="Network">Network</option>
+<option value="Access">Access</option>
+<option value="Other">Other</option>
+</select>
+<select id="tkt-pri" style="width:100%;padding:8px;margin-bottom:16px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;">
+<option value="Low">Low Priority</option>
+<option value="Medium" selected>Medium Priority</option>
+<option value="High">High Priority</option>
+</select>
+<div style="display:flex;gap:10px;justify-content:flex-end;">
+<button onclick="closeTicketModal()" style="padding:8px 16px;border:1px solid #ddd;border-radius:6px;cursor:pointer;">Cancel</button>
+<button onclick="submitTicket()" style="padding:8px 16px;background:#e74c3c;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;">Submit</button>
+</div>
+</div>
+</div>
+<script>
+function openTicketModal(){document.getElementById('ticket-modal').style.display='flex';}
+function closeTicketModal(){document.getElementById('ticket-modal').style.display='none';}
+async function submitTicket(){
+const title=document.getElementById('tkt-title').value;
+const desc=document.getElementById('tkt-desc').value;
+if(!title||!desc){alert('Please fill title and description!');return;}
+const token=sessionStorage.getItem('crm_token');
+const res=await fetch('/api/tickets',{method:'POST',headers:{'Content-Type':'application/json','x-session-token':token},body:JSON.stringify({title,description:desc,category:document.getElementById('tkt-cat').value,priority:document.getElementById('tkt-pri').value})});
+const data=await res.json();
+if(data.success){alert('Ticket raised successfully!');closeTicketModal();}else{alert('Failed: '+data.error);}}
+</script>
+<div id="activity-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
+  <div style="background:#fff;border-radius:12px;padding:28px;width:400px;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <h3 id="activity-modal-title" style="margin:0 0 16px;font-size:18px;">Meeting Details</h3>
+    <div style="margin-bottom:12px;"><label style="font-size:13px;font-weight:600;">Topic / Purpose</label><input id="activity-topic" type="text" placeholder="Enter topic..." style="width:100%;margin-top:4px;padding:8px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box;"></div>
+    <div style="margin-bottom:12px;"><label style="font-size:13px;font-weight:600;">With Whom</label><input id="activity-with" type="text" placeholder="Client / Trainer name..." style="width:100%;margin-top:4px;padding:8px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box;"></div>
+    <div style="margin-bottom:20px;"><label style="font-size:13px;font-weight:600;">Notes</label><textarea id="activity-notes" placeholder="Any additional notes..." style="width:100%;margin-top:4px;padding:8px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box;height:80px;resize:none;"></textarea></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="closeActivityModal()" style="padding:8px 18px;border:1px solid #ddd;border-radius:7px;background:#fff;cursor:pointer;font-size:13px;">Cancel</button>
+      <button onclick="startActivity()" style="padding:8px 18px;border:none;border-radius:7px;background:#0d9488;color:#fff;cursor:pointer;font-size:13px;font-weight:600;">Start Timer</button>
+    </div>
+  </div>
+</div>
+
+<div id="activity-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
+  <div style="background:#fff;border-radius:12px;padding:28px;width:420px;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <h3 id="activity-modal-title" style="margin:0 0 16px;font-size:18px;color:#0d9488;">Meeting Details</h3>
+    <div style="margin-bottom:12px;"><label style="font-size:13px;font-weight:600;">Topic / Purpose *</label><input id="activity-topic" type="text" placeholder="Enter topic..." style="width:100%;margin-top:4px;padding:8px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box;"></div>
+    <div style="margin-bottom:12px;"><label style="font-size:13px;font-weight:600;">With Whom</label><input id="activity-with" type="text" placeholder="Client / Trainer name..." style="width:100%;margin-top:4px;padding:8px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box;"></div>
+    <div style="margin-bottom:20px;"><label style="font-size:13px;font-weight:600;">Notes</label><textarea id="activity-notes" placeholder="Any additional notes..." style="width:100%;margin-top:4px;padding:8px;border:1px solid #ddd;border-radius:7px;font-size:13px;box-sizing:border-box;height:80px;resize:none;"></textarea></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="closeActivityModal()" style="padding:8px 18px;border:1px solid #ddd;border-radius:7px;background:#fff;cursor:pointer;font-size:13px;">Cancel</button>
+      <button onclick="startActivity()" style="padding:8px 18px;border:none;border-radius:7px;background:#0d9488;color:#fff;cursor:pointer;font-size:13px;font-weight:600;">Start Timer</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

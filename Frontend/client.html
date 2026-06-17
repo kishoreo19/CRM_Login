@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
+<title>The JobSync — Client Dashboard</title>
+<link rel="stylesheet" href="client.css"/>
+<style>
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(243,156,18,.4); }
+  50%      { box-shadow: 0 0 0 5px rgba(243,156,18,0); }
+}
+.realtime-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #27ae60; display: inline-block;
+  animation: pulse-green 2s infinite;
+}
+@keyframes pulse-green {
+  0%,100% { box-shadow: 0 0 0 0 rgba(39,174,96,.4); }
+  50%      { box-shadow: 0 0 0 5px rgba(39,174,96,0); }
+}
+.realtime-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(39,174,96,.1); border: 1px solid rgba(39,174,96,.3);
+  border-radius: 20px; padding: 3px 10px; font-size: 10px;
+  font-weight: 700; color: #1a7a40;
+}
+.notes-split-cell {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  min-width: 320px;
+}
+.note-pill-rec {
+  background: #e8f4f8;
+  border: 1px solid rgba(31,154,148,.2);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 11px;
+  color: var(--text-tag, #4a6080);
+  line-height: 1.5;
+}
+.note-pill-hr {
+  background: #fff8e6;
+  border: 1px solid rgba(230,126,34,.25);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 11px;
+  color: #7d4a00;
+  line-height: 1.5;
+}
+.note-pill-label {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+  margin-bottom: 3px;
+}
+</style>
+</head>
+<body>
+ 
+<!-- TOAST -->
+<div id="toast"></div>
+ 
+<!-- ── MODAL: ADD/EDIT CLIENT ── -->
+<div class="overlay" id="client-modal-overlay">
+  <div class="modal">
+    <div class="modal-hd">
+      <div>
+        <div class="modal-ttl" id="client-modal-ttl">Add New Client</div>
+        <div class="modal-sub">Fill in client details</div>
+      </div>
+      <button class="modal-x" onclick="closeClientModal()">&#215;</button>
+    </div>
+    <div class="modal-bd" id="client-modal-body"></div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeClientModal()">Cancel</button>
+      <button class="btn btn-teal" id="client-save-btn" onclick="doSaveClient()">Save Client</button>
+    </div>
+  </div>
+</div>
+ 
+<!-- ── MODAL: VIEW CLIENT ── -->
+<div class="overlay" id="view-client-overlay">
+  <div class="modal modal-wide">
+    <div class="modal-hd">
+      <div>
+        <div class="modal-ttl" id="view-client-ttl">Client Details</div>
+        <div class="modal-sub" id="view-client-sub">Full information</div>
+      </div>
+      <button class="modal-x" onclick="closeViewClientModal()">&#215;</button>
+    </div>
+    <div class="modal-bd" id="view-client-body"></div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeViewClientModal()">Close</button>
+      <button class="btn btn-teal" id="view-edit-btn">Edit Client</button>
+    </div>
+  </div>
+</div>
+ 
+<!-- ── MODAL: FOLLOWUP / INTERVIEW ACTION ── -->
+<div class="overlay" id="action-modal-overlay">
+  <div class="modal">
+    <div class="modal-hd">
+      <div>
+        <div class="modal-ttl" id="action-modal-ttl">Interview Action</div>
+        <div class="modal-sub" id="action-modal-sub">Record outcome</div>
+      </div>
+      <button class="modal-x" onclick="closeActionModal()">&#215;</button>
+    </div>
+    <div class="modal-bd" id="action-modal-body"></div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeActionModal()">Cancel</button>
+      <button class="btn btn-teal" id="action-save-btn" onclick="saveActionOutcome()">Save Outcome</button>
+    </div>
+  </div>
+</div>
+ 
+<!-- ── MODAL: COMPLETED WORK ORDER DETAIL ── -->
+<div class="overlay" id="completed-modal-overlay">
+  <div class="modal modal-wide">
+    <div class="modal-hd">
+      <div>
+        <div class="modal-ttl" id="completed-modal-ttl">Completed Work Order</div>
+        <div class="modal-sub">Candidate placement summary</div>
+      </div>
+      <button class="modal-x" onclick="closeCompletedModal()">&#215;</button>
+    </div>
+    <div class="modal-bd" id="completed-modal-body"></div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeCompletedModal()">Close</button>
+    </div>
+  </div>
+</div>
+ 
+<!-- ── MODAL: DELETE CONFIRM ── -->
+<div class="overlay" id="delete-overlay">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-hd">
+      <div><div class="modal-ttl">Confirm Delete</div></div>
+      <button class="modal-x" onclick="closeDeleteModal()">&#215;</button>
+    </div>
+    <div class="modal-bd" style="text-align:center;padding:32px 24px;">
+      <div style="font-size:42px;margin-bottom:12px;">🗑️</div>
+      <div style="font-size:15px;font-weight:700;color:var(--dark-blue);margin-bottom:8px;" id="delete-item-name">Item</div>
+      <div style="font-size:13px;color:var(--text-tag);margin-bottom:24px;">This action cannot be undone.</div>
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <button class="btn btn-outline" style="min-width:100px;" onclick="closeDeleteModal()">Cancel</button>
+        <button class="btn" style="min-width:100px;background:#e74c3c;color:#fff;" onclick="confirmDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+ 
+<!-- ── MAIN LAYOUT ── -->
+<div id="dash-inner">
+ 
+  <!-- SIDEBAR -->
+  <nav id="sidebar">
+    <div class="sb-brand">
+      <img src="Logo (1) (1).png" alt="JobSync Logo" style="width:28px;height:28px;object-fit:contain;">
+      <span class="sb-name">The JobSync</span>
+    </div>
+ 
+    <!-- DASHBOARD NAV -->
+    <div class="sb-group">
+      <div class="sb-group-label">Overview</div>
+      <div class="sb-item active" id="nav-main-dashboard" onclick="showView('dashboard')">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h5v5H2zm7 0h5v5H9zM2 9h5v5H2zm7 0h5v5H9z"/></svg>
+        <span>Dashboard</span>
+      </div>
+    </div>
+ 
+    <!-- CLIENT MANAGEMENT DROPDOWN -->
+    <div class="sb-group">
+      <div class="sb-group-label">Clients</div>
+      <div class="sb-dropdown-toggle" id="sb-client-toggle" onclick="toggleSbDrop('client')">
+        <div class="sb-dropdown-left">
+          <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 100-6 3 3 0 000 6zM5.216 14A2.238 2.238 0 015 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 005 9c-4 0-5 3-5 4s1 1 1 1h4.216z"/><path d="M4.5 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/></svg>
+          <span>Client Management</span>
+        </div>
+        <svg class="sb-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+      </div>
+      <div class="sb-dropdown-items" id="sb-client-items">
+        <div class="sb-sub-item" id="nav-clients" onclick="showView('clients')">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 2h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1zm1 2v8h8V4H4zm1 2h6v1H5V6zm0 2h6v1H5V8zm0 2h4v1H5v-1z"/></svg>
+          <span>All Clients</span>
+          <span class="sb-sub-cnt" id="sb-cnt-clients">0</span>
+        </div>
+        <div class="sb-sub-item" id="nav-workorders" onclick="showView('workorders')">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h12v12H2V2zm2 2v8h8V4H4zm1 1h6v2H5V5zm0 3h4v1H5V8z"/></svg>
+          <span>Work Orders</span>
+          <span class="sb-sub-cnt" id="sb-cnt-workorders">0</span>
+        </div>
+      </div>
+    </div>
+ 
+    <!-- CLIENT FOLLOWUPS DROPDOWN -->
+    <div class="sb-group">
+      <div class="sb-group-label">Follow-ups</div>
+      <div class="sb-dropdown-toggle" id="sb-followup-toggle" onclick="toggleSbDrop('followup')">
+        <div class="sb-dropdown-left">
+          <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M14 2H2a1 1 0 00-1 1v9a1 1 0 001 1h2v2l3-2h7a1 1 0 001-1V3a1 1 0 00-1-1zm-8 7H4V7h2v2zm3 0H7V7h2v2zm3 0h-2V7h2v2z"/></svg>
+          <span>Client Follow-ups</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <span class="sb-badge-red" id="sb-followup-total-badge" style="display:none;">0</span>
+          <svg class="sb-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+        </div>
+      </div>
+      <div class="sb-dropdown-items" id="sb-followup-items">
+        <div class="sb-sub-item" id="nav-scheduled" onclick="showView('scheduled')">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 1h10a1 1 0 011 1v1H2V2a1 1 0 011-1zM2 4h12v10H2V4zm3 2v1h2V6H5zm4 0v1h2V6H9zm-4 3v1h2V9H5zm4 0v1h2V9H9z"/></svg>
+          <span>Interview Scheduled</span>
+          <span class="sb-sub-cnt scheduled" id="sb-cnt-scheduled">0</span>
+        </div>
+        <div class="sb-sub-item" id="nav-ongoing" onclick="showView('ongoing')">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zM8 3v5l3 3-1 1-3.5-3.5V3H8z"/></svg>
+          <span>Ongoing Interviews</span>
+          <span class="sb-sub-cnt ongoing" id="sb-cnt-ongoing">0</span>
+        </div>
+        <div class="sb-sub-item" id="nav-feedbacks" onclick="showView('feedbacks')">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h12v8H9l-3 3v-3H2V2z"/></svg>
+          <span>Feedbacks</span>
+          <span class="sb-sub-cnt feedback" id="sb-cnt-feedbacks">0</span>
+        </div>
+      </div>
+    </div>
+ 
+    <!-- COMPLETED WORK ORDERS -->
+    <div class="sb-group">
+      <div class="sb-group-label">Work Orders</div>
+      <div class="sb-sub-item" id="nav-completed" onclick="showView('completed')" style="border-left:3px solid transparent;display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;color:rgba(255,255,255,.8);font-size:12.5px;font-weight:600;user-select:none;transition:background .15s;">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M13.854 3.646a.5.5 0 010 .708l-7 7a.5.5 0 01-.708 0l-3.5-3.5a.5.5 0 11.708-.708L6.5 10.293l6.646-6.647a.5.5 0 01.708 0z"/></svg>
+        <span>Completed Work Orders</span>
+        <span class="sb-sub-cnt" style="margin-left:auto;" id="sb-cnt-completed">0</span>
+      </div>
+    </div>
+ 
+    <div style="flex:1;"></div>
+ 
+    <div class="sb-footer">
+      <div class="sb-user-pill">
+        <div class="sb-user-ava">S</div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#fff;">Clients</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.45);">Talent Acquisition</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+ 
+  <!-- MAIN AREA -->
+  <div id="main-area">
+ 
+    <!-- TOPBAR -->
+    <div id="topbar">
+      <div class="tb-left">
+        <div class="tb-greeting" id="tb-greeting">Good Morning, Anitha Mam!</div>
+        <div class="tb-datetime" id="tb-datetime"></div>
+      </div>
+      <div class="tb-right">
+        <button class="btn-add" id="topbar-add-btn" onclick="openAddClientModal()" style="display:none;">
+          <svg viewBox="0 0 16 16" fill="currentColor" width="13" height="13"><path d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z"/></svg>
+          Add Client
+        </button>
+ 
+        <!-- PROFILE DROPDOWN WRAPPER -->
+        <div id="profile-wrap" style="position:relative;">
+          <div id="profile-btn" onclick="toggleProfileDrop()" style="
+            display:flex;align-items:center;gap:9px;
+            background:var(--bg-role);border:1.5px solid var(--border-btn);
+            border-radius:28px;padding:5px 14px 5px 5px;cursor:pointer;
+            transition:border-color .15s,box-shadow .15s;
+          "
+          onmouseenter="this.style.borderColor='var(--teal)';this.style.boxShadow='0 2px 10px rgba(31,154,148,.15)'"
+          onmouseleave="this.style.borderColor='var(--border-btn)';this.style.boxShadow='none'">
+            <div style="
+              width:34px;height:34px;border-radius:50%;overflow:hidden;flex-shrink:0;
+              background:linear-gradient(135deg,var(--teal),var(--mid-blue));
+              border:2px solid rgba(31,154,148,.35);
+              display:flex;align-items:center;justify-content:center;
+            ">
+              <img src="company.png" alt="Anitha Mam"
+                style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;"
+                onerror="this.style.display='none';this.parentNode.innerHTML='<span style=\'font-size:14px;font-weight:700;color:#fff;\'>S</span>'">
+            </div>
+            <div style="line-height:1.2;">
+              <div style="font-size:13px;font-weight:700;color:var(--dark-blue);">Client</div>
+              <div style="font-size:10px;color:var(--text-muted);">Talent Acquisition</div>
+            </div>
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" id="profile-caret" style="color:var(--text-muted);transition:transform .2s;"><path d="M4 6l4 4 4-4"/></svg>
+          </div>
+ 
+          <!-- DROPDOWN MENU -->
+          <div id="profile-drop" style="
+            display:none;position:absolute;top:calc(100% + 8px);right:0;
+            background:#fff;border:1px solid var(--border-btn);
+            border-radius:14px;box-shadow:0 12px 40px rgba(22,46,90,.18);
+            width:240px;overflow:hidden;z-index:999;
+            animation:fadeDown .15s ease;
+          ">
+            <div style="background:linear-gradient(135deg,var(--dark-blue),var(--mid-blue));padding:18px 20px;text-align:center;">
+              <div style="
+                width:56px;height:56px;border-radius:50%;overflow:hidden;
+                margin:0 auto 10px;border:3px solid rgba(255,255,255,.35);
+                background:rgba(255,255,255,.2);
+                display:flex;align-items:center;justify-content:center;
+              ">
+                <img src="company.png" alt="Anitha Mam"
+                  style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;"
+                  onerror="this.style.display='none';this.parentNode.innerHTML='<span style=\'font-size:22px;font-weight:700;color:#fff;\'>S</span>'">
+              </div>
+              <div style="font-weight:700;color:#fff;font-size:15px;">Anitha</div>
+              <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:2px;">Clients · The JobSync</div>
+            </div>
+            <div style="padding:10px 16px;">
+              <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border-div);">
+                <span style="font-size:11px;color:var(--text-muted);width:90px;flex-shrink:0;">Department</span>
+                <span style="font-size:12px;font-weight:600;color:var(--text-head);">Lead &amp; Generation</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border-div);">
+                <span style="font-size:11px;color:var(--text-muted);width:90px;flex-shrink:0;">Employee ID</span>
+                <span style="font-size:12px;font-weight:600;color:var(--text-head);">EMP-002</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;padding:7px 0;">
+                <span style="font-size:11px;color:var(--text-muted);width:90px;flex-shrink:0;">Status</span>
+                <span style="display:flex;align-items:center;gap:5px;">
+                  <span style="width:7px;height:7px;border-radius:50%;background:#27ae60;display:inline-block;"></span>
+                  <span style="font-size:12px;font-weight:600;color:#1a7a40;">Active</span>
+                </span>
+              </div>
+            </div>
+            <div style="padding:10px 16px 14px;">
+              <button onclick="logoutUser()" style="
+                width:100%;padding:10px;border-radius:9px;border:none;
+                background:rgba(192,57,43,.12);color:#c0392b;
+                font-size:13px;font-weight:700;cursor:pointer;
+                display:flex;align-items:center;justify-content:center;gap:8px;
+                transition:background .15s;font-family:'DM Sans',Arial,sans-serif;
+              "
+              onmouseenter="this.style.background='rgba(192,57,43,.22)'"
+              onmouseleave="this.style.background='rgba(192,57,43,.12)'">
+                <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14">
+                  <path d="M6 2h5a1 1 0 011 1v10a1 1 0 01-1 1H6v-1.5h4.5v-9H6V5H5V3a1 1 0 011-1zm-.5 9.5L2 8l3.5-3.5 1.06 1.06L4.62 7.5H11V8.5H4.62l1.94 1.94-1.06 1.06z"/>
+                </svg>
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+ 
+      </div>
+    </div>
+ 
+    <!-- CONTENT -->
+    <div id="content">
+ 
+      <!-- ===== DASHBOARD VIEW ===== -->
+      <div class="view active" id="view-dashboard">
+        <!-- KPI ROW -->
+        <div class="kpi-row">
+          <div class="kpi-big">
+            <div class="kpi-big-icon"></div>
+            <div class="kpi-big-lbl">Total Clients</div>
+            <div class="kpi-big-num" id="k-total-clients">0</div>
+            <div class="kpi-big-sub">All registered companies</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid #1F9A94;" onclick="showView('workorders')">
+            <div class="kpi-c-lbl" style="color:#1F9A94;">Current Openings</div>
+            <div class="kpi-c-num" id="k-openings" style="color:#1F9A94;">0</div>
+            <div class="kpi-c-sub">Active job openings</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid #27ae60;" onclick="showView('completed')">
+            <div class="kpi-c-lbl" style="color:#27ae60;">Placed Candidates</div>
+            <div class="kpi-c-num" id="k-placed" style="color:#27ae60;">0</div>
+            <div class="kpi-c-sub">Successfully placed</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid #e74c3c;" onclick="showView('completed')">
+            <div class="kpi-c-lbl" style="color:#e74c3c;">Bounced Work Orders</div>
+            <div class="kpi-c-num" id="k-bounced" style="color:#e74c3c;">0</div>
+            <div class="kpi-c-sub">Rejected / unfilled</div>
+          </div>
+        </div>
+ 
+        <!-- PIPELINE SUMMARY -->
+        <div class="pipeline-strip">
+          <div class="ps-item" onclick="showView('scheduled')">
+            <div class="ps-icon"></div>
+            <div class="ps-val" id="k-scheduled">0</div>
+            <div class="ps-lbl">Scheduled</div>
+          </div>
+          <div class="ps-arrow">→</div>
+          <div class="ps-item" onclick="showView('ongoing')">
+            <div class="ps-icon"></div>
+            <div class="ps-val" id="k-ongoing">0</div>
+            <div class="ps-lbl">Ongoing</div>
+          </div>
+          <div class="ps-arrow">→</div>
+          <div class="ps-item" onclick="showView('feedbacks')">
+            <div class="ps-icon"></div>
+            <div class="ps-val" id="k-feedbacks">0</div>
+            <div class="ps-lbl">Feedbacks</div>
+          </div>
+          <div class="ps-arrow">→</div>
+          <div class="ps-item ps-placed">
+            <div class="ps-icon"></div>
+            <div class="ps-val" id="k-placed-ps">0</div>
+            <div class="ps-lbl">Placed</div>
+          </div>
+        </div>
+ 
+        <!-- RECENT CLIENTS -->
+        <div class="section-card" style="margin-top:20px;">
+          <div class="section-card-hd">
+            <div>
+              <div class="section-card-ttl">Recent Clients</div>
+              <div class="section-card-sub">Latest registered companies</div>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="showView('clients')">View All →</button>
+          </div>
+          <div class="tbl-wrap" style="margin-top:12px;">
+            <table>
+              <thead><tr><th>Company</th><th>Type</th><th>Contact</th><th>Openings</th><th>Status</th></tr></thead>
+              <tbody id="recent-clients-tbody"><tr><td colspan="5"><div class="empty"><p>No clients yet.</p></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+ 
+      <!-- ===== CLIENTS VIEW ===== -->
+      <div class="view" id="view-clients">
+        <div class="sec-hd">
+          <div>
+            <div class="sec-ttl">Client Directory</div>
+            <div class="sec-sub">All registered companies and contacts</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <div class="search-wrap">
+              <svg viewBox="0 0 16 16" fill="currentColor" width="13" height="13" style="color:var(--text-muted);flex-shrink:0;"><path d="M11.742 10.344a6.5 6.5 0 10-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 001.415-1.414l-3.85-3.85a1.007 1.007 0 00-.115-.1zM12 6.5a5.5 5.5 0 11-11 0 5.5 5.5 0 0111 0z"/></svg>
+              <input type="text" id="client-search" placeholder="Search clients…" oninput="renderClientsTable()"/>
+            </div>
+            <select id="client-type-filter" onchange="renderClientsTable()" style="padding:8px 12px;border-radius:8px;border:1.5px solid var(--border-btn);background:#fff;font-size:13px;outline:none;">
+              <option value="">All Types</option>
+              <option value="IT">IT</option>
+              <option value="Non-IT">Non-IT</option>
+              <option value="Manufacturing">Manufacturing</option>
+            </select>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+           <thead><tr>
+  <th>SNO</th>
+  <th>Company</th>
+  <th>Type</th>
+  <th>Contact Person</th>
+  <th>Contact Number</th>
+  <th>Emergency Contact</th>
+  <th>Requirements</th>
+  <th>Openings</th>
+  <th>Date Posted</th>
+  <th>Last Date to Apply</th>
+  <th>Work Location</th>
+  <th>Action</th>
+</tr></thead>
+            <tbody id="clients-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+ 
+      <!-- ===== WORK ORDERS VIEW ===== -->
+      <div class="view" id="view-workorders">
+        <div class="sec-hd">
+          <div>
+            <div class="sec-ttl">Work Orders</div>
+            <div class="sec-sub">Active job openings and requirements</div>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>SNO</th><th>Client</th><th>Role Required</th><th>Openings</th><th>Priority</th><th>Assigned To</th><th>Due Date</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="workorders-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+ 
+      <!-- ===== SCHEDULED VIEW ===== -->
+      <div class="view" id="view-scheduled">
+        <div class="sec-hd">
+          <div>
+            <div class="sec-ttl">Interview Scheduled</div>
+            <div class="sec-sub" style="display:flex;align-items:center;gap:10px;">
+              Candidates scheduled for interviews from the Recruiter CRM
+              <span class="realtime-badge"><span class="realtime-dot"></span> Live — refreshes every 8s</span>
+            </div>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>SNO</th>
+                <th>Candidate</th>
+                <th>Role</th>
+                <th>Scheduled Date</th>
+                <th>Scheduled Time</th>
+                <th>Recruiter</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="scheduled-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+ 
+      <!-- ===== ONGOING VIEW ===== -->
+      <div class="view" id="view-ongoing">
+        <div class="sec-hd">
+          <div>
+            <div class="sec-ttl">Ongoing Interviews</div>
+            <div class="sec-sub" style="display:flex;align-items:center;gap:10px;">
+              Interviews currently in progress
+              <span class="realtime-badge"><span class="realtime-dot"></span> Live — refreshes every 8s</span>
+            </div>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>SNO</th>
+                <th>Candidate</th>
+                <th>Client / Company</th>
+                <th>Role</th>
+                <th>Round</th>
+                <th>Interview Date</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="ongoing-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+ 
+      <!-- ===== FEEDBACKS VIEW ===== -->
+      <div class="view" id="view-feedbacks">
+        <div class="sec-hd">
+          <div>
+            <div class="sec-ttl">Interview Feedbacks</div>
+            <div class="sec-sub" style="display:flex;align-items:center;gap:10px;">
+              Recruiter &amp; HR/Client feedback — both shown in real-time
+              <span class="realtime-badge"><span class="realtime-dot"></span> Live — refreshes every 8s</span>
+            </div>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>SNO</th>
+                <th>Candidate</th>
+                <th>Client</th>
+                <th>Role</th>
+                <th>Interview Date</th>
+                <th>
+                  <div style="display:flex;flex-direction:column;gap:2px;">
+                    <span style="background:#e8f4f8;color:#1a7a75;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;display:inline-block;width:fit-content;">Recruiter</span>
+                    Notes
+                  </div>
+                </th>
+                <th>
+                  <div style="display:flex;flex-direction:column;gap:2px;">
+                    <span style="background:#fff3e6;color:#b85c00;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;display:inline-block;width:fit-content;">HR / Client</span>
+                    Feedback
+                  </div>
+                </th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="feedbacks-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+ 
+      <!-- ===== COMPLETED WORK ORDERS VIEW ===== -->
+      <div class="view" id="view-completed">
+        <div class="sec-hd">
+          <div>
+            <div class="sec-ttl">Completed Work Orders</div>
+            <div class="sec-sub">Placed and closed candidates — click a row to view details</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="filter-pill active" id="fpill-all" onclick="filterCompleted('all',this)">All</button>
+            <button class="filter-pill" id="fpill-placed" onclick="filterCompleted('placed',this)">✅ Placed</button>
+            <button class="filter-pill" id="fpill-rejected" onclick="filterCompleted('rejected',this)">❌ Rejected</button>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>SNO</th><th>Candidate</th><th>Client</th><th>Role</th><th>Outcome</th><th>Date</th><th>CTC Offered</th><th>Details</th></tr></thead>
+            <tbody id="completed-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+ 
+    </div>
+  </div>
+</div>
+ 
+<script src="client.js"></script>
+</body>
+</html>

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet"/>
+<title>The JobSync — Interview Dashboard</title>
+<link rel="stylesheet" href="/interview.css"/>
+<style>
+/* ── BREAK DISABLED STATE ── */
+#topbar-break-short:disabled,
+#topbar-break-lunch:disabled {
+  opacity: 0.4;
+  cursor: not-allowed !important;
+}
+/* ── LOGOUT BUTTON ── */
+#sb-logout-btn:focus { outline: none; }
+/* ── ATTENDANCE BADGE ── */
+.attendance-dot {
+  display: inline-block; width: 8px; height: 8px;
+  border-radius: 50%; background: #27ae60;
+  margin-right: 5px; animation: pulse-att 2s infinite;
+}
+@keyframes pulse-att {
+  0%,100%{box-shadow:0 0 0 0 rgba(39,174,96,.5)}
+  50%{box-shadow:0 0 0 5px rgba(39,174,96,0)}
+}
+.att-badge {
+  display: inline-flex; align-items: center;
+  background: rgba(39,174,96,.12); border: 1px solid rgba(39,174,96,.3);
+  border-radius: 20px; padding: 4px 10px; font-size: 11px; font-weight: 700;
+  color: #1a7a40; margin-top: 6px;
+}
+</style>
+</head>
+<body>
+ 
+<!-- TOAST -->
+<div id="toast"></div>
+ 
+<!-- MAIN MODAL -->
+<div class="overlay" id="mod-overlay">
+  <div class="modal" id="main-modal">
+    <div class="modal-hd">
+      <div>
+        <div class="modal-ttl" id="mod-ttl">Candidate Proceed</div>
+        <div class="modal-sub" id="mod-sub">Interview processing flow</div>
+      </div>
+      <button class="modal-x" onclick="closeModal()">&#215;</button>
+    </div>
+    <div class="steps-bar" id="steps-bar"></div>
+    <div class="modal-bd" id="mod-body"></div>
+    <div class="modal-ft" id="mod-ft"></div>
+  </div>
+</div>
+ 
+<!-- DASHBOARD -->
+<div id="dash-inner">
+ 
+  <!-- SIDEBAR -->
+  <nav id="sidebar">
+    <!-- BRAND -->
+    <div class="sb-brand">
+      <img src="Logo (1) (1).png" alt="JobSync Logo"
+           style="width:32px;height:32px;object-fit:contain;">
+      <span class="sb-name">The JobSync</span>
+    </div>
+ 
+    <!-- INTERVIEWS -->
+    <div class="sb-group">
+      <div class="sb-group-label">Interviews</div>
+      <div class="sb-item active" id="nav-dashboard" onclick="showDashboard()">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h5v5H2zm7 0h5v5H9zM2 9h5v5H2zm7 0h5v5H9z"/></svg>
+        <span>Interview Dashboard</span>
+      </div>
+    </div>
+ 
+    <!-- FRESH INTERVIEW — RECRUITERS DROPDOWN -->
+    <div class="sb-group">
+      <div class="sb-group-label">Fresh Interview</div>
+      <div class="sb-dropdown-toggle" id="sb-rec-toggle" onclick="toggleDropdown('rec')">
+        <div class="sb-dropdown-toggle-left">
+          <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 8a3 3 0 100-6 3 3 0 000 6zm-5 6a5 5 0 0110 0H3z"/></svg>
+          <span>Recruiters</span>
+        </div>
+        <svg class="sb-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+      </div>
+      <div class="sb-dropdown-items" id="sb-rec-items">
+ 
+        <!-- SOUNDARIYA -->
+        <div class="sb-recruiter-item" id="sb-soundariya" onclick="openRecruiterView('soundariya')">
+          <div class="sb-rec-mini-ava"><img src="WhatsApp Image 2026-04-03 at 10.09.47 AM.jpeg" alt="S" onerror="this.style.display='none';this.parentNode.textContent='S';"></div>
+          <div class="sb-rec-info">
+            <div class="sb-rec-name">Soundariya</div>
+            <div class="sb-rec-pending-row">
+              <div class="sb-pending-mini pay" id="sb-pay-soundariya" style="display:none;"><span>💳</span><span class="pnum" id="sb-pay-cnt-soundariya">0</span><span>Pay</span></div>
+              <div class="sb-pending-mini reg" id="sb-reg-soundariya" style="display:none;"><span>📋</span><span class="pnum" id="sb-reg-cnt-soundariya">0</span><span>Reg</span></div>
+            </div>
+          </div>
+          <span class="sb-rec-badge-main" id="sb-cnt-soundariya">3</span>
+        </div>
+        <div class="sb-pending-item pay-item" id="sb-sound-pay-item" style="display:none;" onclick="openFollowupTab('payment')"><span style="font-size:13px;">💳</span><span>Payment Pending</span><span class="sb-pend-cnt pay-cnt" id="sb-sound-pay-num">0</span></div>
+        <div class="sb-pending-item reg-item" id="sb-sound-reg-item" style="display:none;" onclick="openFollowupTab('regpending')"><span style="font-size:13px;">📋</span><span>Reg. Pending</span><span class="sb-pend-cnt reg-cnt" id="sb-sound-reg-num">0</span></div>
+ 
+        <!-- THARSHINI -->
+        <div class="sb-recruiter-item" id="sb-tharshini" onclick="openRecruiterView('tharshini')">
+          <div class="sb-rec-mini-ava"><img src="WhatsApp Image 2026-04-03 at 11.06.00 AM.jpeg" alt="T" onerror="this.style.display='none';this.parentNode.textContent='T';"></div>
+          <div class="sb-rec-info">
+            <div class="sb-rec-name">Tharshini</div>
+            <div class="sb-rec-pending-row">
+              <div class="sb-pending-mini pay" id="sb-pay-tharshini" style="display:none;"><span>💳</span><span class="pnum" id="sb-pay-cnt-tharshini">0</span><span>Pay</span></div>
+              <div class="sb-pending-mini reg" id="sb-reg-tharshini" style="display:none;"><span>📋</span><span class="pnum" id="sb-reg-cnt-tharshini">0</span><span>Reg</span></div>
+            </div>
+          </div>
+          <span class="sb-rec-badge-main" id="sb-cnt-tharshini">1</span>
+        </div>
+        <div class="sb-pending-item pay-item" id="sb-thar-pay-item" style="display:none;" onclick="openFollowupTab('payment')"><span style="font-size:13px;">💳</span><span>Payment Pending</span><span class="sb-pend-cnt pay-cnt" id="sb-thar-pay-num">0</span></div>
+        <div class="sb-pending-item reg-item" id="sb-thar-reg-item" style="display:none;" onclick="openFollowupTab('regpending')"><span style="font-size:13px;">📋</span><span>Reg. Pending</span><span class="sb-pend-cnt reg-cnt" id="sb-thar-reg-num">0</span></div>
+ 
+      </div>
+    </div>
+ 
+    <!-- FOLLOWUPS DROPDOWN -->
+    <div class="sb-group">
+      <div class="sb-group-label">Follow-ups</div>
+      <div class="sb-dropdown-toggle" id="sb-followup-toggle" onclick="toggleDropdown('followup')">
+        <div class="sb-dropdown-toggle-left">
+          <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M14 2H2a1 1 0 00-1 1v9a1 1 0 001 1h2v2l3-2h7a1 1 0 001-1V3a1 1 0 00-1-1zm-8 7H4V7h2v2zm3 0H7V7h2v2zm3 0h-2V7h2v2z"/></svg>
+          <span>Follow-ups</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <span class="sb-followup-badge" id="sb-followup-badge" style="display:none;">0</span>
+          <svg class="sb-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+        </div>
+      </div>
+      <div class="sb-dropdown-items" id="sb-followup-items">
+        <div class="sb-followup-item" id="nav-pay-pending" onclick="openFollowupTab('payment')">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 3h14v2H1zm0 4h14v6H1zm2 2v2h3v-2H3z"/></svg>
+          <span>Payment Pending</span>
+          <span class="sb-followup-cnt pay" id="sb-followup-pay-cnt">0</span>
+        </div>
+        <div class="sb-followup-item" id="nav-reg-pending" onclick="openFollowupTab('regpending')">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h12v12H2V2zm2 2v8h8V4H4zm1 2h6v1H5V6zm0 2h6v1H5V8zm0 2h4v1H5v-1z"/></svg>
+          <span>Registration Pending</span>
+          <span class="sb-followup-cnt reg" id="sb-followup-reg-cnt">0</span>
+        </div>
+        <div class="sb-followup-item" id="nav-notes" onclick="openFollowupTab('notes')">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 2h10a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1zm1 3h8v1H4V5zm0 3h8v1H4V8zm0 3h5v1H4v-1z"/></svg>
+          <span>Notes</span>
+          <span class="sb-followup-cnt notes" id="sb-followup-notes-cnt">0</span>
+        </div>
+      </div>
+    </div>
+ 
+    <!-- PLACEMENT LIST -->
+    <hr class="sb-section-divider">
+    <div class="sb-placement-header">
+      <span class="sb-section-title">Verified & Pushed to Placement</span>
+      <span class="sb-section-cnt" id="sb-placement-cnt">0</span>
+    </div>
+    <div id="sb-placement-list">
+      <div style="padding:10px 16px 10px 22px;font-size:11px;color:rgba(255,255,255,.35);font-style:italic;">No placements yet</div>
+    </div>
+ 
+    <div style="flex:1;"></div>
+ 
+    <!-- SIDEBAR FOOTER WITH LOGOUT -->
+    <div class="sb-footer">
+      <div class="interviewer-pill">
+        <div class="int-ava-sm"><span style="font-size:20px">👤</span></div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#fff;">Interviewer</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.45);">Interviewer</div>
+          <div class="att-badge" id="sb-att-badge" style="display:none;">
+            <span class="attendance-dot"></span>Present
+          </div>
+        </div>
+      </div>
+      <!-- LOGOUT BUTTON -->
+      <button id="sb-logout-btn" onclick="logoutRamya()" style="
+        display: flex; align-items: center; gap: 8px;
+        width: 100%; margin-top: 10px; padding: 9px 12px;
+        background: rgba(192,57,43,0.15); border: 1px solid rgba(192,57,43,0.35);
+        border-radius: 8px; color: #e8a09a; font-size: 12px; font-weight: 700;
+        cursor: pointer; transition: all 0.15s; letter-spacing: 0.3px;
+        font-family: Arial, sans-serif;
+      "
+      onmouseenter="this.style.background='rgba(192,57,43,0.3)';this.style.color='#ff8a80';this.style.borderColor='rgba(192,57,43,0.6)'"
+      onmouseleave="this.style.background='rgba(192,57,43,0.15)';this.style.color='#e8a09a';this.style.borderColor='rgba(192,57,43,0.35)'">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14">
+          <path d="M6 2h5a1 1 0 011 1v10a1 1 0 01-1 1H6v-1.5h4.5v-9H6V5H5V3a1 1 0 011-1zm-.5 9.5L2 8l3.5-3.5 1.06 1.06L4.62 7.5H11V8.5H4.62l1.94 1.94-1.06 1.06z"/>
+        </svg>
+        <span>Logout</span>
+      </button>
+    </div>
+  </nav>
+ 
+  <!-- MAIN -->
+  <div id="main-area">
+    <div id="topbar">
+      <div class="tb-left">
+        <div class="tb-greeting" id="tb-greeting">
+          <span id="greeting-text">Good Morning</span>, <span class="greeting-name">Interviewer</span>!
+        </div>
+        <div class="tb-datetime" id="tb-datetime"></div>
+      </div>
+      <div class="tb-right">
+ 
+        <!-- BREAK CONTROLS -->
+        <div id="topbar-break-wrap" style="display:flex;align-items:center;gap:8px;margin-right:8px;">
+          <button id="topbar-break-short" onclick="startTopbarBreak('short')" style="
+            display:flex;align-items:center;gap:5px;
+            padding:6px 12px;border-radius:20px;
+            background:rgba(230,126,34,0.1);border:1.5px solid rgba(230,126,34,0.35);
+            color:#c87941;font-size:11.5px;font-weight:700;cursor:pointer;
+            transition:all 0.15s;white-space:nowrap;font-family:Arial,sans-serif;
+          "
+          onmouseenter="if(!this.disabled){this.style.background='rgba(230,126,34,0.2)';this.style.borderColor='rgba(230,126,34,0.6)'}"
+          onmouseleave="if(!this.disabled){this.style.background='rgba(230,126,34,0.1)';this.style.borderColor='rgba(230,126,34,0.35)'}">
+            ☕ Short Break
+          </button>
+          <button id="topbar-break-lunch" onclick="startTopbarBreak('lunch')" style="
+            display:flex;align-items:center;gap:5px;
+            padding:6px 12px;border-radius:20px;
+            background:rgba(31,154,148,0.1);border:1.5px solid rgba(31,154,148,0.3);
+            color:#1a7a75;font-size:11.5px;font-weight:700;cursor:pointer;
+            transition:all 0.15s;white-space:nowrap;font-family:Arial,sans-serif;
+          "
+          onmouseenter="if(!this.disabled){this.style.background='rgba(31,154,148,0.2)';this.style.borderColor='rgba(31,154,148,0.5)'}"
+          onmouseleave="if(!this.disabled){this.style.background='rgba(31,154,148,0.1)';this.style.borderColor='rgba(31,154,148,0.3)'}">
+            🍽️ Lunch Break
+          </button>
+          <div id="topbar-break-display" style="
+            display:none;align-items:center;gap:6px;
+            background:linear-gradient(135deg,rgba(108,63,193,0.12),rgba(22,46,90,0.08));
+            border:1.5px solid rgba(108,63,193,0.25);border-radius:20px;
+            padding:5px 13px;
+          ">
+            <span id="topbar-break-label" style="font-size:11px;font-weight:700;color:#6c3fc1;"></span>
+            <span style="font-size:10px;color:#aab4c4;">ends in</span>
+            <span id="topbar-break-timer" style="
+              font-size:13px;font-weight:800;color:#162E5A;
+              font-variant-numeric:tabular-nums;letter-spacing:1px;
+            ">15:00</span>
+          </div>
+        </div>
+ 
+        <div class="login-badge"><div class="dot"></div><span>Interviewer</span></div>
+        <div class="interviewer-card">
+          <div class="int-ava-top"><span style="font-size:20px">👤</span></div>
+          <span class="int-name-top">Interviewer</span>
+          <span class="int-role-top">Interviewer</span>
+        </div>
+      </div>
+    </div>
+ 
+    <div id="content">
+ 
+      <!-- ===== DASHBOARD VIEW ===== -->
+      <div id="view-dashboard" class="view active">
+ 
+        <!-- KPI ROW -->
+        <div class="kpi-row">
+          <div class="kpi-big">
+            <div class="kpi-big-lbl">Total Scheduled Interviews</div>
+            <div class="kpi-big-num" id="k-total">0</div>
+            <div class="kpi-big-sub">From joining date · All recruiters</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-c-lbl">Profiles for Today</div>
+            <div class="kpi-c-num" id="k-today" style="color:var(--teal);">0</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-c-lbl">Soundariya</div>
+            <div class="kpi-c-num" id="k-sound">0</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-c-lbl">Tharshini</div>
+            <div class="kpi-c-num" id="k-thar">0</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid #6c3fc1;">
+            <div class="kpi-c-lbl" style="color:#6c3fc1;">Interviews Taken</div>
+            <div class="kpi-c-num" id="k-interviews-taken" style="color:#6c3fc1;">0</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid var(--suc-bdr);">
+            <div class="kpi-c-lbl" style="color:var(--suc);">Conversions</div>
+            <div class="kpi-c-num" id="k-conversions" style="color:var(--suc);">0</div>
+          </div>
+        </div>
+ 
+        <!-- DASHBOARD TABS -->
+        <div class="dash-tabs">
+          <button class="dash-tab active" onclick="switchDashTab(this,'payment')">
+            💳 Payment Pending <span class="dash-tab-cnt" id="dtab-pay-cnt">0</span>
+          </button>
+          <button class="dash-tab" onclick="switchDashTab(this,'regpending')">
+            📋 Registration Pending <span class="dash-tab-cnt" id="dtab-reg-cnt">0</span>
+          </button>
+          <button class="dash-tab" onclick="switchDashTab(this,'notes')">
+            📝 Notes <span class="dash-tab-cnt" id="dtab-notes-cnt">0</span>
+          </button>
+          <button class="dash-tab" onclick="switchDashTab(this,'placement')">
+            🏢 Submitted to HR <span class="dash-tab-cnt" id="dtab-placement-cnt">0</span>
+          </button>
+          <button class="dash-tab" onclick="switchDashTab(this,'mycandidates')">
+            👤 My Candidates <span class="dash-tab-cnt" id="dtab-mycand-cnt">0</span>
+          </button>
+        </div>
+ 
+        <!-- PAYMENT PENDING -->
+        <div class="dash-section active" id="dsec-payment">
+          <div class="sec-hd" style="margin-top:0;">
+            <div><div class="sec-ttl">Payment Pending</div><div class="sec-sub">Candidates pending payment — click Proceed to continue</div></div>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>SNO</th><th>Name</th><th>Contact</th><th>Email</th><th>Recruiter</th><th>Preferred Country</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody id="payment-pending-tbody"><tr><td colspan="8"><div class="empty"><p>No payment pending candidates.</p></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+ 
+        <!-- REGISTRATION PENDING -->
+        <div class="dash-section" id="dsec-regpending">
+          <div class="sec-hd" style="margin-top:0;">
+            <div><div class="sec-ttl">Registration Pending</div><div class="sec-sub">Candidates whose registration is not yet completed</div></div>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>SNO</th><th>Name</th><th>Contact</th><th>Email</th><th>Recruiter</th><th>Qualification</th><th>Experience</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody id="reg-pending-tbody"><tr><td colspan="9"><div class="empty"><p>No registration pending candidates.</p></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+ 
+        <!-- NOTES TAB -->
+        <div class="dash-section" id="dsec-notes">
+          <div class="sec-hd" style="margin-top:0;">
+            <div><div class="sec-ttl">All Notes</div><div class="sec-sub">Follow-up notes for all candidates (date &amp; time auto-captured)</div></div>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>SNO</th><th>Candidate Name</th><th>Contact</th><th>Date</th><th>Time</th><th>Note</th></tr></thead>
+              <tbody id="dashboard-notes-tbody"><tr><td colspan="6"><div class="empty"><p>No notes recorded yet.</p></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+ 
+        <!-- SUBMITTED TO HR / PLACEMENT TAB -->
+        <div class="dash-section" id="dsec-placement">
+          <div class="sec-hd" style="margin-top:0;">
+            <div><div class="sec-ttl">Verified &amp; Pushed to Placement</div><div class="sec-sub">Click a candidate name to view their enrollment document</div></div>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>SNO</th><th>Candidate Name</th><th>Contact</th><th>Email</th><th>Recruiter</th><th>Country</th><th>Payment Mode</th><th>Amount</th><th>Enrl No.</th><th>Submitted On</th><th>Status</th><th>Doc</th></tr></thead>
+              <tbody id="placement-tbody"><tr><td colspan="12"><div class="empty"><p>No candidates submitted to HR yet.</p></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+ 
+        <!-- MY CANDIDATES TAB -->
+        <div class="dash-section" id="dsec-mycandidates">
+          <div class="sec-hd" style="margin-top:0;">
+            <div><div class="sec-ttl">My Candidates</div><div class="sec-sub">All candidates processed by Interviewer</div></div>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr>
+                <th>SNO</th><th>Candidate Name</th><th>Contact</th><th>Email</th><th>Recruiter</th>
+                <th>Country</th><th>Payment Mode</th><th>Amount</th><th>Enrl No.</th><th>Submitted On</th><th>Status</th><th>Doc</th>
+              </tr></thead>
+              <tbody id="mycandidates-tbody"><tr><td colspan="12"><div class="empty"><p>No candidates submitted yet.</p></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+ 
+      </div><!-- /view-dashboard -->
+ 
+      <!-- ===== RECRUITER VIEW ===== -->
+      <div id="view-recruiter" class="view">
+        <div class="sec-hd">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <button class="back-btn" onclick="showDashboard()">
+              <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M11 1L5 8l6 7"/></svg>
+              Back
+            </button>
+            <div>
+              <div class="sec-ttl" id="rec-view-ttl">Soundariya's Candidates</div>
+              <div class="sec-sub" id="rec-view-sub">Candidates scheduled for interview</div>
+            </div>
+          </div>
+          <div class="rec-view-profile" id="rec-view-profile"></div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr>
+              <th>SNO</th><th>Name</th><th>Contact</th><th>Email</th>
+              <th>Qualification</th><th>Experience</th><th>Status</th>
+              <th class="dt-cell">Last Note Date/Time</th>
+              <th>Resume</th><th>Action</th>
+            </tr></thead>
+            <tbody id="cand-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+ 
+    </div>
+  </div>
+</div>
+ 
+<!-- Load interview.js first (defines all globals) -->
+<script src="/api.js"></script>
+<script src="/interview.js"></script>
+<!-- Load persistence patch AFTER interview.js -->
+<script src="interview_persistence_patch.js"></script>
+ 
+
+
+</body>
+</html>

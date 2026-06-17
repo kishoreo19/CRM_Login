@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
+<title>The JobSync — Admin Panel</title>
+<link rel="stylesheet" href="admin.css"/>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- ── ADD / EDIT USER MODAL ── -->
+<div class="overlay" id="user-modal">
+  <div class="modal">
+    <div class="modal-hd">
+      <div>
+        <div class="modal-ttl" id="modal-title">Add New User</div>
+        <div class="modal-sub">Fill in the user details below</div>
+      </div>
+      <button class="modal-x" onclick="closeModal('user-modal')">&#215;</button>
+    </div>
+    <div class="modal-bd">
+      <div class="alert-strip" id="modal-alert"></div>
+
+      <!-- PHOTO -->
+      <div class="f-grp full">
+        <label class="f-lbl">Profile Photo</label>
+        <div class="photo-upload-row">
+          <div class="photo-preview" id="photo-preview">
+            <span id="photo-initial">?</span>
+            <img id="photo-img" src="" alt="" style="display:none;">
+          </div>
+          <div>
+            <input type="file" id="photo-file" accept="image/*" style="display:none;" onchange="handlePhoto(this)">
+            <button class="btn-upload" type="button" onclick="document.getElementById('photo-file').click()">&#128247; Upload Photo</button>
+            <div class="hint-txt">JPG, PNG — optional</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="f-row">
+        <div class="f-grp">
+          <label class="f-lbl">Full Name <span class="req">*</span></label>
+          <input class="f-inp" type="text" id="f-name" placeholder="e.g. Soundariya"/>
+        </div>
+        <div class="f-grp">
+          <label class="f-lbl">Role <span class="req">*</span></label>
+          <select class="f-inp" id="f-role">
+            <option value="">— Select Role —</option>
+            <option value="recruiter">Recruiter</option>
+            <option value="interviewer">Interviewer</option>
+            <option value="hr">HR / Placement</option>
+            <option value="client">Client</option>
+            <option value="admin">Admin</option>
+            <option value="itadmin">IT Admin</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="f-row">
+        <div class="f-grp">
+          <label class="f-lbl">Username <span class="req">*</span></label>
+          <input class="f-inp" type="text" id="f-username" placeholder="e.g. sowndarya01"/>
+        </div>
+        <div class="f-grp">
+          <label class="f-lbl">Employee ID</label>
+          <input class="f-inp" type="text" id="f-empid" placeholder="e.g. EMP-003"/>
+        </div>
+      </div>
+
+      <div class="f-row">
+        <div class="f-grp">
+          <label class="f-lbl">Password <span class="req">*</span></label>
+          <div class="pwd-wrap">
+            <input class="f-inp" type="password" id="f-pwd" placeholder="Set password"/>
+            <button class="pwd-eye" type="button" onclick="togglePwd('f-pwd','f-pwd-eye')" id="f-pwd-eye">Show</button>
+          </div>
+        </div>
+        <div class="f-grp">
+          <label class="f-lbl">Confirm Password <span class="req">*</span></label>
+          <div class="pwd-wrap">
+            <input class="f-inp" type="password" id="f-pwd2" placeholder="Repeat password"/>
+            <button class="pwd-eye" type="button" onclick="togglePwd('f-pwd2','f-pwd2-eye')" id="f-pwd2-eye">Show</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="f-row">
+        <div class="f-grp">
+          <label class="f-lbl">Date of Joining</label>
+          <input class="f-inp" type="date" id="f-doj"/>
+        </div>
+        <div class="f-grp">
+          <label class="f-lbl">Status</label>
+          <select class="f-inp" id="f-status">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('user-modal')">Cancel</button>
+      <button class="btn btn-teal" id="user-save-btn" onclick="saveUser()">Add User</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── RESET PASSWORD MODAL ── -->
+<div class="overlay" id="pwd-modal">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-hd">
+      <div>
+        <div class="modal-ttl" id="pwd-modal-title">Reset Password</div>
+        <div class="modal-sub" id="pwd-modal-sub">Set a new password for this user</div>
+      </div>
+      <button class="modal-x" onclick="closeModal('pwd-modal')">&#215;</button>
+    </div>
+    <div class="modal-bd">
+      <div class="info-banner">
+        &#9432; You are resetting the password as Admin. Please inform the user of their new credentials after saving.
+      </div>
+      <div class="alert-strip" id="pwd-alert"></div>
+      <div class="f-grp">
+        <label class="f-lbl">New Password <span class="req">*</span></label>
+        <div class="pwd-wrap">
+          <input class="f-inp" type="password" id="np-pwd" placeholder="Enter new password"/>
+          <button class="pwd-eye" type="button" onclick="togglePwd('np-pwd','np-pwd-eye')" id="np-pwd-eye">Show</button>
+        </div>
+      </div>
+      <div class="f-grp">
+        <label class="f-lbl">Confirm New Password <span class="req">*</span></label>
+        <div class="pwd-wrap">
+          <input class="f-inp" type="password" id="np-pwd2" placeholder="Repeat new password"/>
+          <button class="pwd-eye" type="button" onclick="togglePwd('np-pwd2','np-pwd2-eye')" id="np-pwd2-eye">Show</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('pwd-modal')">Cancel</button>
+      <button class="btn btn-teal" onclick="savePassword()">Update Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── FORGOT PASSWORD MODAL ── -->
+<div class="overlay" id="forgot-modal">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-hd">
+      <div>
+        <div class="modal-ttl">Forgot Password — Find User</div>
+        <div class="modal-sub">Search for the user and reset their password</div>
+      </div>
+      <button class="modal-x" onclick="closeModal('forgot-modal')">&#215;</button>
+    </div>
+    <div class="modal-bd">
+      <div class="info-banner" style="background:var(--warn-bg);border-color:var(--warn-bdr);color:var(--warn);">
+        &#9888; A user reported they forgot their password. Find them below and reset it manually.
+      </div>
+      <div class="f-grp">
+        <label class="f-lbl">Search by name or username</label>
+        <input class="f-inp" type="text" id="forgot-search" placeholder="Type to search users…" oninput="renderForgotList()"/>
+      </div>
+      <div class="forgot-list" id="forgot-list"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-outline" onclick="closeModal('forgot-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── DELETE CONFIRM MODAL ── -->
+<div class="overlay" id="del-modal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-hd">
+      <div><div class="modal-ttl">Confirm Delete</div></div>
+      <button class="modal-x" onclick="closeModal('del-modal')">&#215;</button>
+    </div>
+    <div class="modal-bd" style="text-align:center;padding:32px 24px;">
+      <div style="font-size:48px;margin-bottom:14px;">&#128465;</div>
+      <div class="del-name" id="del-user-name">User Name</div>
+      <div class="del-sub">This action cannot be undone. The user will lose access immediately.</div>
+      <div class="del-btns">
+        <button class="btn btn-outline" onclick="closeModal('del-modal')">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmDelete()">Yes, Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN LAYOUT ── -->
+<div id="dash-inner">
+
+  <!-- SIDEBAR -->
+  <nav id="sidebar">
+    <div class="sb-brand">
+      <img src="Logo (1) (1).png" alt="JobSync" style="width:30px;height:30px;object-fit:contain;"
+           onerror="this.style.display='none'">
+      <div>
+        <div class="sb-name">The JobSync</div>
+        <div class="sb-admin-tag">&#11088; Admin Panel</div>
+      </div>
+    </div>
+
+    <div class="sb-section-lbl">Management</div>
+
+    <div class="sb-item active" id="nav-all" onclick="setTab('all',this)">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 100-6 3 3 0 000 6zM5.216 14A2.238 2.238 0 015 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 005 9c-4 0-5 3-5 4s1 1 1 1h4.216z"/></svg>
+      All Users
+      <span class="sb-cnt" id="cnt-all">0</span>
+    </div>
+
+    <div class="sb-section-lbl">Roles</div>
+
+    <div class="sb-item" id="nav-recruiter" onclick="setTab('recruiter',this)">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 8a3 3 0 100-6 3 3 0 000 6zm-5 6a5 5 0 0110 0H3z"/></svg>
+      Recruiters
+      <span class="sb-cnt" id="cnt-recruiter">0</span>
+    </div>
+
+    <div class="sb-item" id="nav-interviewer" onclick="setTab('interviewer',this)">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.5A2.5 2.5 0 013.5 0h9A2.5 2.5 0 0115 2.5v11A2.5 2.5 0 0112.5 16h-9A2.5 2.5 0 011 13.5v-11z"/></svg>
+      Interviewers
+      <span class="sb-cnt" id="cnt-interviewer">0</span>
+    </div>
+
+    <div class="sb-item" id="nav-hr" onclick="setTab('hr',this)">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L1 5l7 4 7-4-7-4zM1 9l7 4 7-4M1 13l7 4 7-4"/></svg>
+      HR / Placement
+      <span class="sb-cnt" id="cnt-hr">0</span>
+    </div>
+
+    <div class="sb-item" id="nav-client" onclick="setTab('client',this)">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M0 1.5A.5.5 0 01.5 1H2a.5.5 0 01.485.379L2.89 3H14.5a.5.5 0 01.491.592l-1.5 8A.5.5 0 0113 12H4a.5.5 0 01-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 01-.5-.5z"/></svg>
+      Clients
+      <span class="sb-cnt" id="cnt-client">0</span>
+    </div>
+
+    <div class="sb-item" id="nav-admin" onclick="setTab('admin',this)">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.338 1.59a61.44 61.44 0 00-2.837.856.481.481 0 00-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.725 10.725 0 002.287 2.233c.346.244.652.42.893.533.12.057.218.095.293.118a.55.55 0 00.101.025.615.615 0 00.1-.025c.076-.023.174-.061.294-.118.24-.113.547-.29.893-.533a10.726 10.726 0 002.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 00-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524z"/></svg>
+      Admins
+      <span class="sb-cnt" id="cnt-admin">0</span>
+    </div>
+
+    <div style="flex:1;"></div>
+
+    <div class="sb-section-lbl">IT Tickets</div>
+    <div class="sb-item" id="nav-tickets" onclick="setTab('tickets',this)">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h12v1H2V2zm0 3h12v1H2V5zm0 3h8v1H2V8zm0 3h6v1H2v-1z"/></svg>
+      IT Tickets
+    </div>
+    <div class="sb-section-lbl">Quick Actions</div>
+    <div class="sb-item" onclick="openForgotModal()">
+      <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a2 2 0 012 2v4H6V3a2 2 0 012-2zm3 6V3a3 3 0 00-6 0v4a2 2 0 00-2 2v5a2 2 0 002 2h6a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg>
+      Forgot Password
+    </div>
+
+    <!-- Replace the existing sb-footer div in admin.html with this -->
+
+    <div class="sb-footer">
+      <div class="sb-user-pill">
+        <div class="sb-ava" id="sb-ava">
+          <img src="Arun.png" alt="Admin" onerror="this.style.display='none';this.parentNode.textContent='A';">
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div class="sb-uname" id="sb-uname">Admin</div>
+          <div class="sb-urole" id="sb-urole">Super Admin</div>
+        </div>
+      </div>
+
+      <!-- ── LOGOUT BUTTON ── -->
+      <button
+        onclick="logoutUser()"
+        style="
+          width: 100%;
+          margin-top: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 10px 14px;
+          border-radius: 8px;
+          border: 1.5px solid rgba(192,57,43,0.4);
+          background: rgba(192,57,43,0.12);
+          color: #f1948a;
+          font-size: 13px;
+          font-weight: 700;
+          cursor: pointer;
+          font-family: inherit;
+          transition: background 0.15s, border-color 0.15s;
+        "
+        onmouseover="this.style.background='rgba(192,57,43,0.25)';this.style.borderColor='rgba(192,57,43,0.7)';"
+        onmouseout="this.style.background='rgba(192,57,43,0.12)';this.style.borderColor='rgba(192,57,43,0.4)';"
+      >
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 12.5a.5.5 0 01-.5.5h-8a.5.5 0 01-.5-.5v-9a.5.5 0 01.5-.5h8a.5.5 0 01.5.5v2a.5.5 0 001 0v-2A1.5 1.5 0 009.5 2h-8A1.5 1.5 0 000 3.5v9A1.5 1.5 0 001.5 14h8a1.5 1.5 0 001.5-1.5v-2a.5.5 0 00-1 0v2z"/>
+          <path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 000-.708l-3-3a.5.5 0 10-.708.708L14.293 7.5H5.5a.5.5 0 000 1h8.793l-2.147 2.146a.5.5 0 00.708.708l3-3z"/>
+        </svg>
+        Logout
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN AREA -->
+  <div id="main-area">
+
+    <!-- TOPBAR -->
+    <div id="topbar">
+      <div class="tb-left">
+        <div class="tb-title" id="page-title">All Users</div>
+        <div class="tb-sub" id="tb-datetime"></div>
+      </div>
+      <div class="tb-right">
+        <input type="text" id="search-input" class="search-inp" placeholder="&#128269; Search by name or username…" oninput="renderTable()"/>
+        <select id="status-filter" class="filter-sel" onchange="renderTable()">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+        <button class="btn btn-teal" onclick="openAddModal()">+ Add User</button>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div id="content">
+
+      <!-- KPI STRIP -->
+      <div class="kpi-strip">
+        <div class="kpi-big">
+          <div class="kpi-big-lbl">Total Users</div>
+          <div class="kpi-big-num" id="s-total">0</div>
+          <div class="kpi-big-sub">All roles combined</div>
+        </div>
+        <div class="kpi-card" style="border-top:3px solid var(--teal);">
+          <div class="kpi-c-lbl" style="color:var(--teal);">Recruiters</div>
+          <div class="kpi-c-num" id="s-rec" style="color:var(--teal);">0</div>
+        </div>
+        <div class="kpi-card" style="border-top:3px solid #8e44ad;">
+          <div class="kpi-c-lbl" style="color:#8e44ad;">Interviewers</div>
+          <div class="kpi-c-num" id="s-int" style="color:#8e44ad;">0</div>
+        </div>
+        <div class="kpi-card" style="border-top:3px solid var(--mid-blue);">
+          <div class="kpi-c-lbl" style="color:var(--mid-blue);">HR / Placement</div>
+          <div class="kpi-c-num" id="s-hr" style="color:var(--mid-blue);">0</div>
+        </div>
+        <div class="kpi-card" style="border-top:3px solid #d4a017;">
+          <div class="kpi-c-lbl" style="color:#9a6f00;">Clients</div>
+          <div class="kpi-c-num" id="s-cli" style="color:#9a6f00;">0</div>
+        </div>
+        <div class="kpi-card" style="border-top:3px solid var(--err);">
+          <div class="kpi-c-lbl" style="color:var(--err);">Admins</div>
+          <div class="kpi-c-num" id="s-adm" style="color:var(--err);">0</div>
+        </div>
+        <div class="kpi-card" style="border-top:3px solid #27ae60;">
+          <div class="kpi-c-lbl" style="color:#1a7a40;">Active</div>
+          <div class="kpi-c-num" id="s-active" style="color:#1a7a40;">0</div>
+        </div>
+      </div>
+
+      <!-- USER TABLE CARD -->
+      <div class="tbl-card" id="user-tbl-card">
+        <div class="tbl-card-hd">
+          <div>
+            <div class="tbl-card-ttl" id="table-title">All Users</div>
+            <div class="tbl-card-sub" id="table-sub">Manage all system accounts</div>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>SNO</th>
+                <th>User</th>
+                <th>Role</th>
+                <th>Username</th>
+                <th>Employee ID</th>
+                <th>Date of Join</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="user-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+
+      <!-- TICKETS SECTION -->
+      <div id="sec-tickets" style="display:none;">
+        <div class="tbl-card">
+          <div class="tbl-card-hd">
+            <div>
+              <div class="tbl-card-ttl">IT Tickets</div>
+              <div class="tbl-card-sub">All tickets raised by staff</div>
+            </div>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>SNO</th>
+                  <th>Raised By</th>
+                  <th>Title</th>
+                  <th>Category</th>
+                  <th>Priority</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tickets-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+<script src="admin.js"></script>
+</body>
+</html>

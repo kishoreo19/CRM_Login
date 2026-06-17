@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<title>The JobSync — Placement Dashboard</title>
+<link rel="stylesheet" href="/placement.css"/>
+<style>
+/* ── BREAK DISABLED STATE ── */
+#topbar-break-short:disabled,
+#topbar-break-lunch:disabled {
+  opacity: 0.4;
+  cursor: not-allowed !important;
+}
+/* ── LOGOUT BUTTON ── */
+#sb-logout-btn:focus { outline: none; }
+/* ── PLACED TABLE ROW HOVER ── */
+#placed-tbody tr:hover { background: #f0fff4 !important; }
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- MAIN MODAL -->
+<div class="overlay" id="mod-overlay">
+  <div class="modal" id="main-modal">
+    <div class="modal-hd">
+      <div>
+        <div class="modal-ttl" id="mod-ttl">Candidate Pipeline</div>
+        <div class="modal-sub" id="mod-sub">Processing flow</div>
+      </div>
+      <button class="modal-x" onclick="closeModal()">&#215;</button>
+    </div>
+    <div class="steps-bar" id="steps-bar"></div>
+    <div class="modal-bd" id="mod-body"></div>
+    <div class="modal-ft" id="mod-ft"></div>
+  </div>
+</div>
+
+<!-- PLACEMENT INTERVIEW MODAL -->
+<div class="overlay" id="placement-interview-overlay">
+  <div class="modal" id="placement-interview-modal">
+    <div class="modal-hd">
+      <div>
+        <div class="modal-ttl" id="pi-ttl">Placement Interview</div>
+        <div class="modal-sub" id="pi-sub">Schedule & outcome</div>
+      </div>
+      <button class="modal-x" onclick="closePlacementInterviewModal()">&#215;</button>
+    </div>
+    <div class="modal-bd" id="pi-body"></div>
+    <div class="modal-ft" id="pi-ft"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dash-inner">
+
+  <!-- SIDEBAR -->
+  <nav id="sidebar">
+    <!-- BRAND -->
+    <div class="sb-brand">
+      <img src="Logo (1) (1).png" alt="JobSync Logo" style="width:32px;height:32px;object-fit:contain;">
+      <span class="sb-name">The JobSync</span>
+    </div>
+
+    <!-- PLACEMENT DASHBOARD NAV -->
+    <div class="sb-group">
+      <div class="sb-group-label">Placement</div>
+      <div class="sb-item active" id="nav-dashboard" onclick="showDashboard()">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h5v5H2zm7 0h5v5H9zM2 9h5v5H2zm7 0h5v5H9z"/></svg>
+        <span>Placement Dashboard</span>
+      </div>
+    </div>
+
+    <!-- INTERVIEWER DROPDOWN -->
+    <div class="sb-group">
+      <div class="sb-group-label">Placement Team</div>
+      <div class="sb-dropdown-toggle" id="sb-int-toggle" onclick="toggleDropdown('int')">
+        <div class="sb-dropdown-toggle-left">
+          <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 8a3 3 0 100-6 3 3 0 000 6zm-5 6a5 5 0 0110 0H3z"/></svg>
+          <span>Interviewers</span>
+        </div>
+        <svg class="sb-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+      </div>
+      <div class="sb-dropdown-items" id="sb-int-items">
+        <!-- RAMYA -->
+        <div class="sb-recruiter-item" id="sb-ramya" onclick="openInterviewerView('ramya')">
+          <div class="sb-rec-mini-ava"><img src="ramya.jpeg" alt="R" onerror="this.style.display='none';this.parentNode.textContent='R';"></div>
+          <div class="sb-rec-info">
+            <div class="sb-rec-name">Ramya</div>
+          </div>
+          <span class="sb-rec-badge-main" id="sb-cnt-ramya">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOLLOW-UPS DROPDOWN -->
+    <div class="sb-group">
+      <div class="sb-group-label">Follow-ups</div>
+      <div class="sb-dropdown-toggle" id="sb-followup-toggle" onclick="toggleDropdown('followup')">
+        <div class="sb-dropdown-toggle-left">
+          <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M14 2H2a1 1 0 00-1 1v9a1 1 0 001 1h2v2l3-2h7a1 1 0 001-1V3a1 1 0 00-1-1zm-8 7H4V7h2v2zm3 0H7V7h2v2zm3 0h-2V7h2v2z"/></svg>
+          <span>Follow-ups</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <span class="sb-followup-badge" id="sb-followup-badge" style="display:none;">0</span>
+          <svg class="sb-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+        </div>
+      </div>
+      <div class="sb-dropdown-items" id="sb-followup-items">
+        <div class="sb-followup-item" id="nav-bgv-pending" onclick="openFollowupTab('bgv')">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a4 4 0 100 8A4 4 0 008 1zM3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3z"/></svg>
+          <span>BGV Pending</span>
+          <span class="sb-followup-cnt bgv" id="sb-followup-bgv-cnt">0</span>
+        </div>
+        <div class="sb-followup-item" id="nav-contract-pending" onclick="openFollowupTab('contract')">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h12v12H2V2zm2 2v8h8V4H4zm1 2h6v1H5V6zm0 2h6v1H5V8zm0 2h4v1H5v-1z"/></svg>
+          <span>Contract Pending</span>
+          <span class="sb-followup-cnt contract" id="sb-followup-contract-cnt">0</span>
+        </div>
+        <div class="sb-followup-item" id="nav-payment-pending" onclick="openFollowupTab('payment')">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 3h14v2H1zm0 4h14v6H1zm2 2v2h3v-2H3z"/></svg>
+          <span>Payment Pending</span>
+          <span class="sb-followup-cnt payment" id="sb-followup-payment-cnt">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRAINING & PLACEMENT -->
+    <div class="sb-group">
+      <div class="sb-group-label">Training & Placement</div>
+      <div class="sb-dropdown-toggle" id="sb-training-toggle" onclick="toggleDropdown('training')">
+        <div class="sb-dropdown-toggle-left">
+          <svg class="icon" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L1 5l7 4 7-4-7-4zM1 9l7 4 7-4M1 13l7 4 7-4"/></svg>
+          <span>Training Pipeline</span>
+        </div>
+        <svg class="sb-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
+      </div>
+      <div class="sb-dropdown-items" id="sb-training-items">
+        <div class="sb-followup-item" id="nav-training" onclick="openFollowupTab('training')">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L1 5l7 4 7-4-7-4zM1 9l7 4 7-4"/></svg>
+          <span>In Training</span>
+          <span class="sb-followup-cnt training" id="sb-followup-training-cnt">0</span>
+        </div>
+        <div class="sb-followup-item" id="nav-placement-followup" onclick="openFollowupTab('placement_followup')">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L1 5l7 4 7-4-7-4zM1 9l7 4 7-4M1 13l7 4 7-4"/></svg>
+          <span>Placement Follow-up</span>
+          <span class="sb-followup-cnt placed" id="sb-followup-placement-cnt">0</span>
+        </div>
+        <div class="sb-followup-item" id="nav-scheduled-history" onclick="openFollowupTab('scheduled')">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v1H2zm0 4h12v1H2zm0 4h8v1H2z"/></svg>
+          <span>Scheduled History</span>
+          <span class="sb-followup-cnt" id="sb-followup-scheduled-cnt">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PLACED LIST -->
+    <hr class="sb-section-divider">
+    <div class="sb-placement-header">
+      <span class="sb-section-title">Placed Candidates</span>
+      <span class="sb-section-cnt" id="sb-placed-cnt">0</span>
+    </div>
+    <div id="sb-placed-list">
+      <div style="padding:10px 16px 10px 22px;font-size:11px;color:rgba(255,255,255,.35);font-style:italic;">No placed candidates yet</div>
+    </div>
+
+    <div style="flex:1;"></div>
+
+    <!-- SIDEBAR FOOTER WITH LOGOUT -->
+    <div class="sb-footer">
+      <div class="interviewer-pill">
+        <div class="int-ava-sm"><img src="WhatsApp Image 2026-04-07 at 10.04.42 AM.jpeg" alt="Shree Harine" onerror="this.style.display='none';this.parentNode.innerHTML='SH';"></div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#fff;">Shree Harine</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.45);">Placement Officer</div>
+        </div>
+      </div>
+      <!-- LOGOUT BUTTON -->
+      <button id="sb-logout-btn" onclick="logoutShreeHarine()" style="
+        display: flex; align-items: center; gap: 8px;
+        width: 100%; margin-top: 10px; padding: 9px 12px;
+        background: rgba(192,57,43,0.15); border: 1px solid rgba(192,57,43,0.35);
+        border-radius: 8px; color: #e8a09a; font-size: 12px; font-weight: 700;
+        cursor: pointer; transition: all 0.15s; letter-spacing: 0.3px;
+        font-family: Arial, sans-serif;
+      "
+      onmouseenter="this.style.background='rgba(192,57,43,0.3)';this.style.color='#ff8a80';this.style.borderColor='rgba(192,57,43,0.6)'"
+      onmouseleave="this.style.background='rgba(192,57,43,0.15)';this.style.color='#e8a09a';this.style.borderColor='rgba(192,57,43,0.35)'">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14">
+          <path d="M6 2h5a1 1 0 011 1v10a1 1 0 01-1 1H6v-1.5h4.5v-9H6V5H5V3a1 1 0 011-1zm-.5 9.5L2 8l3.5-3.5 1.06 1.06L4.62 7.5H11V8.5H4.62l1.94 1.94-1.06 1.06z"/>
+        </svg>
+        <span>Logout</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div id="main-area">
+    <div id="topbar">
+      <div class="tb-left">
+        <div class="tb-greeting">
+          <span id="greeting-text">Good Morning</span>, <span class="greeting-name">Shree Harine</span>!
+        </div>
+        <div class="tb-datetime" id="tb-datetime"></div>
+      </div>
+      <div class="tb-right">
+
+        <!-- BREAK CONTROLS -->
+        <div id="topbar-break-wrap" style="display:flex;align-items:center;gap:8px;margin-right:8px;">
+          <button id="topbar-break-short" onclick="startTopbarBreak('short')" style="
+            display:flex;align-items:center;gap:5px;
+            padding:6px 12px;border-radius:20px;
+            background:rgba(230,126,34,0.1);border:1.5px solid rgba(230,126,34,0.35);
+            color:#c87941;font-size:11.5px;font-weight:700;cursor:pointer;
+            transition:all 0.15s;white-space:nowrap;font-family:Arial,sans-serif;
+          "
+          onmouseenter="if(!this.disabled){this.style.background='rgba(230,126,34,0.2)';this.style.borderColor='rgba(230,126,34,0.6)'}"
+          onmouseleave="if(!this.disabled){this.style.background='rgba(230,126,34,0.1)';this.style.borderColor='rgba(230,126,34,0.35)'}">
+            ☕ Short Break
+          </button>
+          <button id="topbar-break-lunch" onclick="startTopbarBreak('lunch')" style="
+            display:flex;align-items:center;gap:5px;
+            padding:6px 12px;border-radius:20px;
+            background:rgba(31,154,148,0.1);border:1.5px solid rgba(31,154,148,0.3);
+            color:#1a7a75;font-size:11.5px;font-weight:700;cursor:pointer;
+            transition:all 0.15s;white-space:nowrap;font-family:Arial,sans-serif;
+          "
+          onmouseenter="if(!this.disabled){this.style.background='rgba(31,154,148,0.2)';this.style.borderColor='rgba(31,154,148,0.5)'}"
+          onmouseleave="if(!this.disabled){this.style.background='rgba(31,154,148,0.1)';this.style.borderColor='rgba(31,154,148,0.3)'}">
+            🍽️ Lunch Break
+          </button>
+          <div id="topbar-break-display" style="
+            display:none;align-items:center;gap:6px;
+            background:linear-gradient(135deg,rgba(108,63,193,0.12),rgba(22,46,90,0.08));
+            border:1.5px solid rgba(108,63,193,0.25);border-radius:20px;
+            padding:5px 13px;
+          ">
+            <span id="topbar-break-label" style="font-size:11px;font-weight:700;color:#6c3fc1;"></span>
+            <span style="font-size:10px;color:#aab4c4;">ends in</span>
+            <span id="topbar-break-timer" style="
+              font-size:13px;font-weight:800;color:#162E5A;
+              font-variant-numeric:tabular-nums;letter-spacing:1px;
+            ">15:00</span>
+          </div>
+        </div>
+
+        <div class="login-badge"><div class="dot"></div><span>Placement Officer &nbsp;<strong>Shree Harine</strong></span></div>
+        <div class="interviewer-card">
+          <div class="int-ava-top"><img src="WhatsApp Image 2026-04-07 at 10.04.42 AM.jpeg" alt="Shree Harine" onerror="this.style.display='none';this.parentNode.textContent='SH';"></div>
+          <span class="int-name-top">Shree Harine</span>
+          <span class="int-role-top">Placement Officer</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="content">
+
+      <!-- ===== DASHBOARD VIEW ===== -->
+      <div id="view-dashboard" class="view active">
+
+        <!-- KPI ROW -->
+        <div class="kpi-row">
+          <div class="kpi-big" onclick="showDashboard()" style="cursor:pointer;">
+            <div class="kpi-big-lbl">Total Candidates</div>
+            <div class="kpi-big-num" id="k-total">0</div>
+            <div class="kpi-big-sub">All pipeline candidates</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid #2980b9;" onclick="switchDashTab(document.querySelector('.dash-tab[data-tab=registered]'),'registered')" id="kpi-registered">
+            <div class="kpi-c-lbl" style="color:#2980b9;">Registered</div>
+            <div class="kpi-c-num" id="k-registered" style="color:#2980b9;">0</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid #8e44ad;" onclick="switchDashTab(document.querySelector('.dash-tab[data-tab=bgv]'),'bgv')" id="kpi-bgv">
+            <div class="kpi-c-lbl" style="color:#8e44ad;">Background Verification</div>
+            <div class="kpi-c-num" id="k-bgv" style="color:#8e44ad;">0</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid #e67e22;" onclick="switchDashTab(document.querySelector('.dash-tab[data-tab=contract]'),'contract')" id="kpi-contract">
+            <div class="kpi-c-lbl" style="color:#e67e22;">Contract</div>
+            <div class="kpi-c-num" id="k-contract" style="color:#e67e22;">0</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid #16a085;" onclick="switchDashTab(document.querySelector('.dash-tab[data-tab=followup]'),'followup')" id="kpi-followup">
+            <div class="kpi-c-lbl" style="color:#16a085;">Follow-Up</div>
+            <div class="kpi-c-num" id="k-followup" style="color:#16a085;">0</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid #2c3e50;" onclick="switchDashTab(document.querySelector('.dash-tab[data-tab=training]'),'training')" id="kpi-training">
+            <div class="kpi-c-lbl" style="color:#2c3e50;">Training</div>
+            <div class="kpi-c-num" id="k-training" style="color:#2c3e50;">0</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid #27ae60;" onclick="switchDashTab(document.querySelector('.dash-tab[data-tab=placed]'),'placed')" id="kpi-placed">
+            <div class="kpi-c-lbl" style="color:#27ae60;">Placed</div>
+            <div class="kpi-c-num" id="k-placed" style="color:#27ae60;">0</div>
+          </div>
+        </div>
+
+        <!-- DASHBOARD TABS -->
+        <div class="dash-tabs">
+          <button class="dash-tab active" data-tab="registered" onclick="switchDashTab(this,'registered')">Registered <span class="dash-tab-cnt" id="dtab-reg-cnt">0</span></button>
+          <button class="dash-tab" data-tab="bgv" onclick="switchDashTab(this,'bgv')">Background Verification <span class="dash-tab-cnt" id="dtab-bgv-cnt">0</span></button>
+          <button class="dash-tab" data-tab="contract" onclick="switchDashTab(this,'contract')">Contract <span class="dash-tab-cnt" id="dtab-contract-cnt">0</span></button>
+          <button class="dash-tab" data-tab="followup" onclick="switchDashTab(this,'followup')">Follow-Up <span class="dash-tab-cnt" id="dtab-followup-cnt">0</span></button>
+          <button class="dash-tab" data-tab="training" onclick="switchDashTab(this,'training')">Training <span class="dash-tab-cnt" id="dtab-training-cnt">0</span></button>
+          <button class="dash-tab" data-tab="placed" onclick="switchDashTab(this,'placed')">Placed <span class="dash-tab-cnt" id="dtab-placed-cnt">0</span></button>
+        </div>
+
+        <!-- REGISTERED -->
+        <div class="dash-section active" id="dsec-registered">
+          <div class="sec-hd" style="margin-top:0;"><div><div class="sec-ttl">Registered Candidates</div><div class="sec-sub">Candidates who have been registered in the system</div></div></div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>SNO</th><th>Name</th><th>Contact</th><th>Email</th><th>Interviewer</th><th>Country</th><th>Date and Time</th><th>Stage</th><th>Action</th></tr></thead>
+            <tbody id="registered-tbody"><tr><td colspan="9"><div class="empty"><p>No registered candidates.</p></div></td></tr></tbody>
+          </table></div>
+        </div>
+
+        <!-- BGV -->
+        <div class="dash-section" id="dsec-bgv">
+          <div class="sec-hd" style="margin-top:0;"><div><div class="sec-ttl">Background Verification</div><div class="sec-sub">Document verification stage</div></div></div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>SNO</th><th>Name</th><th>Contact</th><th>Country</th><th>BGV Status</th><th>Documents</th><th>Action</th></tr></thead>
+            <tbody id="bgv-tbody"><tr><td colspan="7"><div class="empty"><p>No candidates in BGV stage.</p></div></td></tr></tbody>
+          </table></div>
+        </div>
+
+        <!-- CONTRACT -->
+        <div class="dash-section" id="dsec-contract">
+          <div class="sec-hd" style="margin-top:0;"><div><div class="sec-ttl">Contract</div><div class="sec-sub">Candidates in contract review stage</div></div></div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>SNO</th><th>Name</th><th>Contact</th><th>Country</th><th>Contract Status</th><th>Notes</th><th>Action</th></tr></thead>
+            <tbody id="contract-tbody"><tr><td colspan="7"><div class="empty"><p>No candidates in contract stage.</p></div></td></tr></tbody>
+          </table></div>
+        </div>
+
+        <!-- FOLLOW-UP -->
+        <div class="dash-section" id="dsec-followup">
+          <div class="sec-hd" style="margin-top:0;"><div><div class="sec-ttl">Follow-Up</div><div class="sec-sub">Candidates requiring follow-up</div></div></div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>SNO</th><th>Name</th><th>Contact</th><th>Country</th><th>Stage</th><th>Note</th><th>Action</th></tr></thead>
+            <tbody id="followup-tbody"><tr><td colspan="7"><div class="empty"><p>No follow-up candidates.</p></div></td></tr></tbody>
+          </table></div>
+        </div>
+
+        <!-- TRAINING -->
+        <div class="dash-section" id="dsec-training">
+          <div class="sec-hd" style="margin-top:0;"><div><div class="sec-ttl">Training</div><div class="sec-sub">Candidates currently in training program</div></div></div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>SNO</th><th>Name</th><th>Contact</th><th>Country</th><th>Training Stage</th><th>Progress</th><th>Action</th></tr></thead>
+            <tbody id="training-tbody"><tr><td colspan="7"><div class="empty"><p>No candidates in training.</p></div></td></tr></tbody>
+          </table></div>
+        </div>
+
+        <!-- PLACED -->
+        <div class="dash-section" id="dsec-placed">
+          <div class="sec-hd" style="margin-top:0;">
+            <div>
+              <div class="sec-ttl">Placed Candidates</div>
+              <div class="sec-sub">Successfully placed candidates — click any row to view full details</div>
+            </div>
+          </div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>SNO</th><th>Name</th><th>Contact</th><th>Company</th><th>Country</th><th>Placement Date</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="placed-tbody"><tr><td colspan="8"><div class="empty"><p>No placed candidates yet.</p></div></td></tr></tbody>
+          </table></div>
+        </div>
+
+      </div>
+
+      <!-- SCHEDULED HISTORY -->
+      <div class="dash-section" id="dsec-scheduled">
+        <div class="sec-hd" style="margin-top:0;">
+          <div>
+            <div class="sec-ttl">Scheduled Interview History</div>
+            <div class="sec-sub">All placement interviews that have been scheduled</div>
+          </div>
+        </div>
+        <div class="tbl-wrap"><table>
+          <thead><tr>
+            <th>SNO</th><th>Candidate</th><th>Company</th>
+            <th>Date & Time</th><th>Mode</th><th>Outcome</th><th>Recorded At</th>
+          </tr></thead>
+          <tbody id="scheduled-tbody">
+            <tr><td colspan="7"><div class="empty"><p>No scheduled interviews yet.</p></div></td></tr>
+          </tbody>
+        </table></div>
+      </div>
+
+      <!-- ===== INTERVIEWER VIEW ===== -->
+      <div id="view-interviewer" class="view">
+        <div class="sec-hd">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <button class="back-btn" onclick="showDashboard()">
+              <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M11 1L5 8l6 7"/></svg>
+              Back
+            </button>
+            <div>
+              <div class="sec-ttl" id="int-view-ttl">Ramya's Candidates</div>
+              <div class="sec-sub" id="int-view-sub">Candidates in placement pipeline</div>
+            </div>
+          </div>
+          <div class="rec-view-profile" id="int-view-profile"></div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr>
+              <th>SNO</th><th>Name</th><th>Contact</th><th>Email</th>
+              <th>Country</th><th>Submitted</th><th>Stage</th><th>Action</th>
+            </tr></thead>
+            <tbody id="int-cand-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===== PLACEMENT FOLLOWUP VIEW ===== -->
+      <div id="view-placement-followup" class="view">
+        <div class="sec-hd">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <button class="back-btn" onclick="showDashboard()">
+              <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><path d="M11 1L5 8l6 7"/></svg>
+              Back
+            </button>
+            <div>
+              <div class="sec-ttl">Placement Follow-up</div>
+              <div class="sec-sub">Candidates who completed training — schedule interviews</div>
+            </div>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr>
+              <th>SNO</th><th>Name</th><th>Contact</th><th>Country</th>
+              <th>Expected Salary</th><th>Qualification</th><th>Interview History</th><th>Action</th>
+            </tr></thead>
+            <tbody id="placement-followup-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="/api.js"></script>
+<script src="/placement.js"></script>
+<script>
+// ── BREAK LOGIC ──
+let _breakTimer = null;
+
+function startTopbarBreak(type) {
+  if (_breakTimer) return;
+
+  const minutes = type === 'lunch' ? 30 : 15;
+  let seconds = minutes * 60;
+
+  const shortBtn = document.getElementById('topbar-break-short');
+  const lunchBtn = document.getElementById('topbar-break-lunch');
+  const display  = document.getElementById('topbar-break-display');
+  const label    = document.getElementById('topbar-break-label');
+  const timerEl  = document.getElementById('topbar-break-timer');
+
+  shortBtn.disabled = true;
+  lunchBtn.disabled = true;
+  display.style.display = 'flex';
+  label.textContent = type === 'lunch' ? '🍽️ Lunch Break' : '☕ Short Break';
+
+  function fmt(s) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+  }
+  timerEl.textContent = fmt(seconds);
+
+  _breakTimer = setInterval(() => {
+    seconds--;
+    timerEl.textContent = fmt(seconds);
+    if (seconds <= 0) {
+      clearInterval(_breakTimer);
+      _breakTimer = null;
+      shortBtn.disabled = false;
+      lunchBtn.disabled = false;
+      display.style.display = 'none';
+      timerEl.textContent = fmt(minutes * 60);
+    }
+  }, 1000);
+}
+
+// ── LOGOUT ──
+function logoutShreeHarine() {
+  if (confirm('Are you sure you want to logout?')) {
+    window.location.href = 'jobsync_login (2).html';
+  }
+}
+
+// ---- DROPDOWN STATE ----
+const dropdownState = { int: false, followup: false, training: false };
+
+function toggleDropdown(key) {
+  dropdownState[key] = !dropdownState[key];
+  const toggle = document.getElementById('sb-' + key + '-toggle');
+  const items  = document.getElementById('sb-' + key + '-items');
+  if (toggle) toggle.classList.toggle('open', dropdownState[key]);
+  if (items)  items.classList.toggle('open', dropdownState[key]);
+}
+
+function ensureDropdownOpen(key) {
+  if (!dropdownState[key]) toggleDropdown(key);
+}
+
+// ---- OPEN FOLLOWUP TAB (from sidebar) ----
+function openFollowupTab(tab) {
+  document.querySelectorAll('.sb-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.sb-recruiter-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.sb-followup-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('nav-dashboard').classList.add('active');
+
+  if (tab === 'placement_followup') {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-placement-followup').classList.add('active');
+    renderPlacementFollowupTable();
+    const navEl = document.getElementById('nav-placement-followup');
+    if (navEl) navEl.classList.add('active');
+    return;
+  }
+
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-dashboard').classList.add('active');
+  renderAllTables(); renderKPIs();
+
+  document.querySelectorAll('.dash-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.dash-section').forEach(s => s.classList.remove('active'));
+
+  const sectionMap = {
+    bgv: 'dsec-bgv', contract: 'dsec-contract', payment: 'dsec-followup',
+    training: 'dsec-training', scheduled: 'dsec-placed'
+  };
+
+  const sectionId = sectionMap[tab] || 'dsec-registered';
+  const secEl = document.getElementById(sectionId);
+  if (secEl) secEl.classList.add('active');
+
+  const navIds = {
+    bgv: 'nav-bgv-pending', contract: 'nav-contract-pending',
+    payment: 'nav-payment-pending', training: 'nav-training', scheduled: 'nav-scheduled-history'
+  };
+  const navEl = document.getElementById(navIds[tab]);
+  if (navEl) navEl.classList.add('active');
+}
+
+// ---- DASHBOARD TAB SWITCH ----
+function switchDashTab(el, tab) {
+  document.querySelectorAll('.dash-tab').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.querySelectorAll('.dash-section').forEach(s => s.classList.remove('active'));
+  const secEl = document.getElementById('dsec-' + tab);
+  if (secEl) secEl.classList.add('active');
+
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-dashboard').classList.add('active');
+}
+
+// ---- OVERRIDE openInterviewerView ----
+// ✅ FIXED: placed candidates show "View Details" button instead of "Resume"
+// ✅ FIXED: Added "Submitted" date/time column
+window.openInterviewerView = function(name) {
+  ensureDropdownOpen('int');
+  document.querySelectorAll('.sb-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.sb-recruiter-item').forEach(el => el.classList.remove('active'));
+  const el = document.getElementById('sb-' + name.toLowerCase());
+  if (el) el.classList.add('active');
+
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-interviewer').classList.add('active');
+
+  const intName = name === 'ramya' ? 'Ramya' : name;
+  document.getElementById('int-view-ttl').textContent = intName + "'s Candidates";
+
+  const list = PIPELINE.filter(c => (c.interviewer || 'Ramya') === intName);
+  document.getElementById('int-view-sub').textContent = list.length + ' candidate' + (list.length !== 1 ? 's' : '') + ' in pipeline';
+
+  document.getElementById('int-view-profile').innerHTML = `
+    <div class="rec-view-ava"><img src="ramya.jpeg" alt="Ramya" onerror="this.style.display='none';this.parentNode.textContent='R';"></div>
+    <div><div class="rec-view-nm">${intName}</div><div class="rec-view-rl">Interviewer · The JobSync</div></div>`;
+
+  const tb = document.getElementById('int-cand-tbody');
+  if (!list.length) {
+    tb.innerHTML = '<tr><td colspan="8"><div class="empty"><p>No candidates assigned to this interviewer.</p></div></td></tr>';
+    return;
+  }
+
+  tb.innerHTML = list.map((c, i) => `<tr>
+    <td style="color:var(--text-muted);font-size:12px;">${i+1}</td>
+    <td><div style="display:flex;align-items:center;gap:8px;">
+      <div style="width:30px;height:30px;border-radius:50%;flex-shrink:0;overflow:hidden;background:linear-gradient(135deg,var(--teal),var(--mid-blue));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;">
+        ${c.photo ? `<img src="${esc(c.photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" onerror="this.style.display='none';">` : esc(c.name.charAt(0))}
+      </div>
+      <strong>${esc(c.name)}</strong>
+    </div></td>
+    <td style="font-size:12px;">${esc(c.contact)}</td>
+    <td style="font-size:12px;color:var(--text-tag);">${esc(c.email||'—')}</td>
+    <td><span class="badge b-teal">${esc(c.country||'—')}</span></td>
+    <td>
+      ${c.submittedDate
+        ? `<div style="font-size:11px;">
+             <div style="color:var(--teal);font-weight:700;">📅 ${esc(c.submittedDate)}</div>
+             ${c.submittedTime ? `<div style="color:#6c3fc1;font-weight:600;margin-top:1px;">🕐 ${esc(c.submittedTime)}</div>` : ''}
+           </div>`
+        : '<span style="color:var(--text-muted);font-size:11px;">—</span>'}
+    </td>
+    <td><span class="badge ${STAGE_BADGE[c.stage]||'b-gray'}">${STAGE_LABELS[c.stage]||c.stage}</span></td>
+    <td>
+      ${c.stage === 'registered'
+        ? `<button class="btn btn-dark btn-sm" onclick="openVerifyModal('${c.id}')">Verify</button>`
+        : c.stage === 'placed'
+          ? `<button class="btn btn-green btn-sm" onclick="openPlacedCandidateModal('${c.id}')">View Details</button>`
+          : `<button class="btn btn-teal btn-sm" onclick="resumePipeline('${c.id}')">Resume</button>`}
+    </td>
+  </tr>`).join('');
+};
+
+// ---- OVERRIDE showDashboard ----
+const _origDash = showDashboard;
+window.showDashboard = function() {
+  document.querySelectorAll('.sb-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('nav-dashboard').classList.add('active');
+  document.querySelectorAll('.sb-recruiter-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.sb-followup-item').forEach(el => el.classList.remove('active'));
+  _origDash();
+};
+</script>
+
+<script>if(window.patchBreakButtons) patchBreakButtons();</script>
+</body>
+</html>

@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet"/>
+<title>The JobSync — Super Admin</title>
+<style>
+:root {
+  --teal:#1F9A94;--teal-dark:#178a84;--teal-light:#e4f5f4;
+  --dark-blue:#162E5A;--mid-blue:#1a5276;
+  --gold:#d4a017;--gold-light:#fff8e6;
+  --red:#c0392b;--red-light:#fde8e8;
+  --bg-page:#eef2f7;--bg-white:#ffffff;--bg-input:#f8fafc;--bg-role:#f4f7fb;
+  --text-head:#162E5A;--text-tag:#4a6080;--text-btn:#6b7a99;
+  --text-inp:#2d3748;--text-muted:#aab4c4;--text-label:#4a5568;
+  --border-btn:#d0d8e4;--border-inp:#dce3ed;--border-div:#e4eaf2;
+  --err:#c0392b;--err-bdr:#e74c3c;--err-bg:#fde8e8;
+  --suc:#1a7a40;--suc-bdr:#27ae60;--suc-bg:#e6f9ed;
+  --sidebar-w:270px;--nav-h:64px;--radius:10px;
+  --shadow:0 2px 14px rgba(22,46,90,.08);
+  --shadow-md:0 4px 24px rgba(22,46,90,.13);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'DM Sans',Arial,sans-serif;color:var(--text-inp);}
+button,input,select,textarea{font-family:'DM Sans',Arial,sans-serif;}
+button{cursor:pointer;}
+#dash-inner{display:flex;height:100vh;overflow:hidden;}
+
+/* ── SIDEBAR ── */
+#sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--dark-blue);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;}
+.sb-brand{background:#fff;border-bottom:2px solid #e2e8f0;display:flex;align-items:center;gap:10px;padding:14px 16px;flex-shrink:0;}
+.sb-name{font-family:'Cinzel',serif;font-weight:700;letter-spacing:1.5px;font-size:14px;color:#162E5A;}
+.sb-super-badge{background:linear-gradient(135deg,#c0392b,#96281b);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:1px;text-transform:uppercase;margin-left:auto;white-space:nowrap;}
+.sb-group{padding:10px 0 4px;}
+.sb-group-label{font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:rgba(255,255,255,.35);padding:0 16px 6px;}
+.sb-item{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;color:#fff;font-size:13px;font-weight:600;border-left:3px solid transparent;user-select:none;transition:background .15s;}
+.sb-item:hover{background:rgba(255,255,255,.08);}
+.sb-item.active{background:rgba(31,154,148,.22);border-left-color:var(--teal);}
+.sb-item svg{width:15px;height:15px;flex-shrink:0;opacity:.9;}
+.sb-footer{padding:14px 16px;border-top:1px solid rgba(255,255,255,.1);flex-shrink:0;}
+.sb-user-pill{display:flex;align-items:center;gap:10px;background:rgba(192,57,43,.15);border:1px solid rgba(192,57,43,.3);border-radius:10px;padding:10px 12px;}
+.sb-user-ava{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#c0392b,#96281b);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0;}
+
+/* ── MAIN ── */
+#main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+#topbar{min-height:var(--nav-h);background:var(--bg-white);border-bottom:1px solid var(--border-div);display:flex;align-items:center;padding:0 24px;gap:14px;box-shadow:0 1px 6px rgba(22,46,90,.06);flex-shrink:0;}
+.tb-left{flex:1;display:flex;flex-direction:column;gap:2px;}
+.tb-greeting{font-size:15px;font-weight:700;background:linear-gradient(90deg,#c0392b,var(--dark-blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.tb-datetime{font-size:11.5px;color:var(--text-muted);font-weight:500;}
+.tb-right{display:flex;align-items:center;gap:10px;}
+.super-badge-top{display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,rgba(192,57,43,.1),rgba(150,40,27,.06));border:1.5px solid rgba(192,57,43,.35);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;color:#96281b;}
+#content{flex:1;overflow-y:auto;padding:22px 24px;background:var(--bg-page);}
+.view{display:none;}
+.view.active{display:block;}
+
+/* ── LIVE DOT ── */
+.live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#27ae60;animation:pulse-g 2s infinite;margin-right:4px;}
+.live-dot.disconnected{background:#e74c3c;animation:none;}
+@keyframes pulse-g{0%,100%{box-shadow:0 0 0 0 rgba(39,174,96,.5)}50%{box-shadow:0 0 0 5px rgba(39,174,96,0)}}
+
+/* ── SSE STATUS ── */
+#sse-status{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;transition:color .3s;}
+#sse-status.connected{color:var(--suc);}
+#sse-status.connecting{color:#e67e22;}
+#sse-status.disconnected{color:var(--err);}
+
+/* ── SECTION HEADER ── */
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+.sec-ttl{font-size:18px;font-weight:700;color:var(--dark-blue);}
+.sec-sub{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.section-divider{display:flex;align-items:center;gap:12px;margin:24px 0 14px;}
+.sd-line{flex:1;height:1px;background:var(--border-div);}
+.sd-label{font-size:10px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:var(--text-muted);white-space:nowrap;}
+
+/* ── KPI ── */
+.kpi-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px;}
+.kpi-big{border-radius:var(--radius);padding:20px 24px;color:#fff;min-width:160px;flex:1.4;box-shadow:0 4px 24px rgba(22,46,90,.22);position:relative;overflow:hidden;}
+.kpi-big.blue{background:linear-gradient(135deg,var(--dark-blue),var(--mid-blue));}
+.kpi-big.red{background:linear-gradient(135deg,#c0392b,#96281b);}
+.kpi-big.green{background:linear-gradient(135deg,#1a7a40,#145a32);}
+.kpi-big.teal{background:linear-gradient(135deg,var(--teal),var(--mid-blue));}
+.kpi-big.gold{background:linear-gradient(135deg,#b8860b,#9a6f00);}
+.kpi-big::after{content:'';position:absolute;right:-20px;top:-20px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.06);}
+.kpi-big-lbl{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:.7;margin-bottom:5px;}
+.kpi-big-num{font-size:44px;font-weight:700;line-height:1;transition:all .3s;}
+.kpi-big-sub{font-size:10px;opacity:.52;margin-top:5px;}
+.kpi-card{background:var(--bg-white);border:1px solid var(--border-btn);border-radius:var(--radius);padding:15px 17px 13px;box-shadow:var(--shadow);flex:1;min-width:100px;}
+.kpi-c-lbl{font-size:9px;color:var(--text-tag);font-weight:700;text-transform:uppercase;letter-spacing:.9px;}
+.kpi-c-num{font-size:30px;font-weight:700;color:var(--dark-blue);margin-top:4px;line-height:1;transition:all .3s;}
+.kpi-c-sub{font-size:10px;color:var(--text-muted);margin-top:3px;}
+
+/* ── TURNOVER CARDS ── */
+.turnover-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
+.turnover-card{border-radius:var(--radius);padding:20px 22px;color:#fff;box-shadow:0 4px 20px rgba(22,46,90,.18);position:relative;overflow:hidden;}
+.turnover-card::after{content:'';position:absolute;right:-15px;top:-15px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,.07);}
+.tc-period{font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;opacity:.7;margin-bottom:5px;}
+.tc-amount{font-size:36px;font-weight:700;line-height:1;transition:all .3s;}
+.tc-sub{font-size:10px;opacity:.55;margin-top:4px;}
+.tc-placements{display:inline-flex;align-items:center;gap:5px;margin-top:8px;background:rgba(255,255,255,.15);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;}
+
+/* ── RECRUITER REVENUE CARDS ── */
+.rec-rev-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:20px;}
+.rec-rev-card{background:var(--bg-white);border:1px solid var(--border-btn);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);}
+.rrc-header{padding:14px 18px;background:linear-gradient(135deg,var(--dark-blue),var(--mid-blue));display:flex;align-items:center;gap:12px;}
+.rrc-ava{width:42px;height:42px;border-radius:50%;overflow:hidden;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;flex-shrink:0;}
+.rrc-ava img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.rrc-name{font-size:14px;font-weight:700;color:#fff;}
+.rrc-role{font-size:10px;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.5px;}
+.rrc-body{padding:16px 18px;}
+.rrc-revenue{font-size:28px;font-weight:700;color:#1a7a40;}
+.rrc-sub{font-size:11px;color:var(--text-muted);margin-bottom:12px;}
+.rrc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.rrc-item{background:var(--bg-role);border-radius:8px;padding:8px 10px;text-align:center;}
+.rrc-item-val{font-size:20px;font-weight:700;color:var(--dark-blue);}
+.rrc-item-lbl{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;}
+.rrc-period-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;}
+.rrc-period{background:#e8f4f8;border-radius:7px;padding:6px 8px;text-align:center;}
+.rrc-period-val{font-size:14px;font-weight:700;color:var(--teal);}
+.rrc-period-lbl{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.4px;}
+
+/* ── PRESENCE CARDS ── */
+.presence-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px;}
+.presence-card{background:var(--bg-white);border:1px solid var(--border-btn);border-radius:var(--radius);padding:15px 18px;flex:1;min-width:180px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:all .3s;}
+.presence-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.presence-card.online::before{background:#27ae60;}
+.presence-card.on_break::before{background:#e67e22;}
+.presence-card.logged_out::before{background:#7f8c8d;}
+.presence-card.not_logged_in::before{background:#e74c3c;}
+.pc-ava{width:42px;height:42px;border-radius:50%;overflow:hidden;flex-shrink:0;background:linear-gradient(135deg,var(--teal),var(--mid-blue));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;}
+.pc-ava img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;}
+.pc-name{font-size:13px;font-weight:700;color:var(--dark-blue);}
+.pc-role-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;}
+.dot-online{display:inline-block;width:7px;height:7px;border-radius:50%;background:#27ae60;animation:pulse-g 2s infinite;}
+.dot-break{display:inline-block;width:7px;height:7px;border-radius:50%;background:#e67e22;animation:pulse-g 2s infinite;}
+.dot-logout{display:inline-block;width:7px;height:7px;border-radius:50%;background:#7f8c8d;}
+.dot-offline{display:inline-block;width:7px;height:7px;border-radius:50%;background:#e74c3c;}
+
+/* ── TABLE ── */
+.tbl-wrap{background:var(--bg-white);border:1px solid var(--border-btn);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:20px;}
+.tbl-scroll{overflow-x:auto;overflow-y:auto;max-height:520px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead{position:sticky;top:0;z-index:2;}
+th{padding:10px 13px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text-tag);border-bottom:1px solid var(--border-div);white-space:nowrap;background:var(--bg-role);}
+td{padding:10px 13px;border-bottom:1px solid var(--border-div);color:var(--text-inp);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#f9fbfd;}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+.b-green{background:var(--suc-bg);color:var(--suc);}
+.b-teal{background:var(--teal-light);color:var(--teal);}
+.b-orange{background:#fff3e6;color:#b85c00;}
+.b-red{background:var(--err-bg);color:var(--err);}
+.b-blue{background:#e8eef8;color:var(--mid-blue);}
+.b-gray{background:var(--bg-role);color:var(--text-tag);}
+.b-purple{background:#f0eaff;color:#6c3fc1;}
+
+/* ── DOWNLOAD BUTTONS ── */
+.dl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:20px;}
+.dl-card{background:var(--bg-white);border:1.5px solid var(--border-btn);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:14px;}
+.dl-card:hover{border-color:var(--teal);box-shadow:var(--shadow-md);transform:translateY(-2px);}
+.dl-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.dl-card-title{font-size:13px;font-weight:700;color:var(--dark-blue);}
+.dl-card-sub{font-size:11px;color:var(--text-muted);margin-top:2px;}
+
+/* ── PERIOD BUTTONS ── */
+.period-row{display:flex;gap:0;border:1.5px solid var(--border-btn);border-radius:8px;overflow:hidden;background:#fff;}
+.period-btn{padding:6px 16px;font-size:12px;font-weight:700;border:none;background:transparent;color:var(--text-tag);cursor:pointer;transition:all .15s;}
+.period-btn.active{background:var(--dark-blue);color:#fff;}
+
+/* ── BUTTONS ── */
+.btn{padding:7px 16px;border-radius:7px;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;}
+.btn-teal{background:var(--teal);color:#fff;}
+.btn-teal:hover{background:var(--teal-dark);}
+.btn-outline{background:#fff;border:1.5px solid var(--border-btn);color:var(--text-btn);}
+.btn-outline:hover{border-color:var(--teal);color:var(--teal);}
+.btn-red{background:#c0392b;color:#fff;}
+.btn-red:hover{background:#96281b;}
+.refresh-btn{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:8px;background:rgba(31,154,148,.1);border:1px solid rgba(31,154,148,.25);color:var(--teal);font-size:12px;font-weight:600;cursor:pointer;}
+.refresh-btn:hover{background:rgba(31,154,148,.2);}
+
+/* ── TOAST ── */
+#toast{display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--dark-blue);color:#fff;padding:10px 22px;border-radius:24px;font-size:13px;font-weight:500;z-index:9999;box-shadow:var(--shadow-md);white-space:nowrap;}
+#toast.show{display:block;}
+#toast.ok{background:var(--suc);}
+#toast.err{background:var(--err);}
+
+.empty{text-align:center;padding:40px 24px;}
+.empty p{font-size:13px;color:var(--text-muted);}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border-btn);border-radius:10px;}
+
+/* CHART MODAL */
+#chart-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;align-items:center;justify-content:center;}
+#chart-overlay.open{display:flex;}
+#chart-box{background:#fff;border-radius:14px;width:840px;max-width:96vw;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 16px 60px rgba(22,46,90,.25);overflow:hidden;}
+#chart-header{padding:16px 22px;border-bottom:1px solid var(--border-div);display:flex;align-items:center;justify-content:space-between;background:var(--bg-role);}
+#chart-body{flex:1;overflow:auto;padding:20px 22px;}
+#chart-footer{padding:12px 22px;border-top:1px solid var(--border-div);display:flex;justify-content:flex-end;gap:10px;background:#fff;}
+
+/* ── UPDATE FLASH ── */
+@keyframes flash-update {
+  0%   { background: rgba(31,154,148,.18); }
+  100% { background: transparent; }
+}
+.just-updated { animation: flash-update 1.2s ease-out; }
+
+@media(max-width:860px){
+  #sidebar{width:58px;min-width:58px;}
+  .sb-name,.sb-group-label,.sb-item>span,.sb-super-badge{display:none;}
+  .sb-item{padding:12px;justify-content:center;}
+  #content{padding:14px;}
+  .turnover-grid{grid-template-columns:1fr;}
+  .rec-rev-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+
+<!-- CHART MODAL -->
+<div id="chart-overlay">
+  <div id="chart-box">
+    <div id="chart-header">
+      <div>
+        <div id="chart-title" style="font-size:15px;font-weight:700;color:var(--dark-blue);">Report</div>
+        <div id="chart-sub" style="font-size:11px;color:var(--text-muted);margin-top:2px;"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="period-row">
+          <button class="period-btn active" id="pb-week"  onclick="switchChartPeriod('week')">Week</button>
+          <button class="period-btn"        id="pb-month" onclick="switchChartPeriod('month')">Month</button>
+          <button class="period-btn"        id="pb-year"  onclick="switchChartPeriod('year')">Year</button>
+        </div>
+        <button onclick="closeChart()" style="background:none;border:none;font-size:22px;color:var(--text-muted);cursor:pointer;">✕</button>
+      </div>
+    </div>
+    <div id="chart-body">
+      <canvas id="modalChart" style="max-height:320px;"></canvas>
+      <div id="chart-data-table" style="margin-top:18px;"></div>
+    </div>
+    <div id="chart-footer">
+      <button class="btn btn-outline" onclick="downloadChartExcel()">📥 Download Excel</button>
+      <button class="btn btn-teal"    onclick="downloadChartPNG()">📊 Download Chart PNG</button>
+    </div>
+  </div>
+</div>
+
+<div id="dash-inner">
+  <!-- SIDEBAR -->
+  <nav id="sidebar">
+    <div class="sb-brand">
+      <img src="Logo (1) (1).png" alt="JobSync" style="width:28px;height:28px;object-fit:contain;" onerror="this.style.display='none'">
+      <span class="sb-name">The JobSync</span>
+      <span class="sb-super-badge">Super Admin</span>
+    </div>
+
+    <div class="sb-group">
+      <div class="sb-group-label">Overview</div>
+      <div class="sb-item active" id="nav-overview" onclick="showView('overview')">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2h5v5H2zm7 0h5v5H9zM2 9h5v5H2zm7 0h5v5H9z"/></svg>
+        <span>Super Dashboard</span>
+      </div>
+    </div>
+
+    <div class="sb-group">
+      <div class="sb-group-label">Revenue</div>
+      <div class="sb-item" id="nav-revenue" onclick="showView('revenue')">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 10.781c.148 1.667 1.513 2.85 3.591 3.003V15h1.043v-1.216c2.27-.179 3.678-1.438 3.678-3.3 0-1.59-.947-2.51-2.956-3.028l-.722-.187V3.467c1.122.11 1.879.714 2.07 1.616h1.47c-.166-1.6-1.54-2.748-3.54-2.875V1H7.591v1.233c-1.939.23-3.27 1.472-3.27 3.156 0 1.454.966 2.483 2.661 2.917l.61.162v4.031c-1.149-.17-1.94-.8-2.131-1.718H4z"/></svg>
+        <span>Revenue Tracker</span>
+      </div>
+    </div>
+
+    <div class="sb-group">
+      <div class="sb-group-label">Team</div>
+      <div class="sb-item" id="nav-attendance" onclick="showView('attendance')">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 100-6 3 3 0 000 6z"/></svg>
+        <span>Team Attendance</span>
+      </div>
+      <div class="sb-item" id="nav-recruiters" onclick="showView('recruiters')">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 100-6 3 3 0 000 6zM5.216 14A2.238 2.238 0 015 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 005 9c-4 0-5 3-5 4s1 1 1 1h4.216z"/></svg>
+        <span>Recruiters Report</span>
+      </div>
+      <div class="sb-item" id="nav-interviewer" onclick="showView('interviewer')">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 8a3 3 0 100-6 3 3 0 000 6zm-5 6a5 5 0 0110 0H3z"/></svg>
+        <span>Interviewer Stats</span>
+      </div>
+      <div class="sb-item" id="nav-placement" onclick="showView('placement')">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M13.854 3.646a.5.5 0 010 .708l-7 7a.5.5 0 01-.708 0l-3.5-3.5a.5.5 0 11.708-.708L6.5 10.293l6.646-6.647a.5.5 0 01.708 0z"/></svg>
+        <span>Placement / HR</span>
+      </div>
+    </div>
+
+    <div class="sb-group">
+      <div class="sb-group-label">Downloads</div>
+      <div class="sb-item" id="nav-downloads" onclick="showView('downloads')">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 01.5.5v2.1a1 1 0 001 1h12a1 1 0 001-1v-2.1a.5.5 0 011 0v2.1a2 2 0 01-2 2H2a2 2 0 01-2-2v-2.1a.5.5 0 01.5-.5z"/><path d="M7.646 11.854a.5.5 0 00.708 0l3-3a.5.5 0 00-.708-.708L8.5 10.293V1.5a.5.5 0 00-1 0v8.793L5.354 8.146a.5.5 0 10-.708.708l3 3z"/></svg>
+        <span>Download Reports</span>
+      </div>
+    </div>
+
+    <div style="flex:1;"></div>
+    <div class="sb-footer">
+      <div class="sb-user-pill">
+        <div class="sb-user-ava">SA</div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#fff;">Super Admin</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.5);">Full Access</div>
+        </div>
+        <button onclick="doLogout()" title="Logout" style="margin-left:auto;background:rgba(192,57,43,.2);border:none;color:#e8a09a;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:12px;font-weight:700;">↩</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div id="main-area">
+    <div id="topbar">
+      <div class="tb-left">
+        <div class="tb-greeting" id="tb-greeting">Good Morning, Super Admin!</div>
+        <div class="tb-datetime" id="tb-datetime"></div>
+      </div>
+      <div class="tb-right">
+        <div id="sse-status" class="connecting">
+          <span class="live-dot" id="live-dot"></span>
+          <span id="sse-label">Connecting…</span>
+        </div>
+        <button class="refresh-btn" onclick="manualRefresh()">
+          <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12"><path d="M11.534 7h3.932a.25.25 0 01.192.41l-1.966 2.36a.25.25 0 01-.384 0l-1.966-2.36a.25.25 0 01.192-.41zm-11 2h3.932a.25.25 0 00.192-.41L2.692 6.23a.25.25 0 00-.384 0L.342 8.59A.25.25 0 00.534 9z"/><path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 11-.771-.636A6.002 6.002 0 0113.917 7H12.9A5.002 5.002 0 008 3zM3.1 9a5.002 5.002 0 008.757 2.182.5.5 0 11.771.636A6.002 6.002 0 012.083 9H3.1z"/></svg>
+          Refresh
+        </button>
+        <span style="font-size:11px;color:var(--text-muted);" id="last-refresh">—</span>
+        <div class="super-badge-top">🔴 Super Admin</div>
+      </div>
+    </div>
+
+    <div id="content">
+
+      <!-- ===== OVERVIEW ===== -->
+      <div class="view active" id="view-overview">
+
+        <!-- TURNOVER SECTION -->
+        <div class="sec-hd">
+          <div><div class="sec-ttl">💰 Business Turnover</div><div class="sec-sub">Revenue across all periods · ₹5,000 per placement · <strong>live</strong></div></div>
+          <button class="btn btn-teal" onclick="showView('revenue')">Full Revenue →</button>
+        </div>
+        <div class="turnover-grid">
+          <div class="turnover-card" style="background:linear-gradient(135deg,#1a7a40,#145a32);">
+            <div class="tc-period">This Week</div>
+            <div class="tc-amount" id="tc-week">₹0</div>
+            <div class="tc-sub">Current week revenue</div>
+            <div class="tc-placements" id="tc-week-pl">0 placements</div>
+          </div>
+          <div class="turnover-card" style="background:linear-gradient(135deg,#1F9A94,#1a5276);">
+            <div class="tc-period">This Month</div>
+            <div class="tc-amount" id="tc-month">₹0</div>
+            <div class="tc-sub" id="tc-month-name">Current month</div>
+            <div class="tc-placements" id="tc-month-pl">0 placements</div>
+          </div>
+          <div class="turnover-card" style="background:linear-gradient(135deg,#b8860b,#9a6f00);">
+            <div class="tc-period">This Year</div>
+            <div class="tc-amount" id="tc-year">₹0</div>
+            <div class="tc-sub" id="tc-year-sub">Annual revenue</div>
+            <div class="tc-placements" id="tc-year-pl">0 placements</div>
+          </div>
+        </div>
+
+        <!-- LIVE ATTENDANCE -->
+        <div class="section-divider"><div class="sd-line"></div><div class="sd-label">Live Team Status</div><div class="sd-line"></div></div>
+        <div class="sec-hd">
+          <div><div class="sec-ttl">Live Team Attendance</div><div class="sec-sub" id="presence-sub">Connecting…</div></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <span id="att-online-badge"  style="background:var(--suc-bg);color:var(--suc);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;">Online: 0</span>
+            <span id="att-break-badge"   style="background:#fff3e6;color:#b85c00;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;">Break: 0</span>
+            <span id="att-absent-badge"  style="background:var(--err-bg);color:var(--err);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;">Absent: 0</span>
+          </div>
+        </div>
+        <div class="presence-row" id="presence-row">
+          <div style="padding:20px;color:var(--text-muted);">Connecting to live stream…</div>
+        </div>
+
+        <!-- BUSINESS KPIs -->
+        <div class="section-divider"><div class="sd-line"></div><div class="sd-label">Business Overview</div><div class="sd-line"></div></div>
+        <div class="kpi-row">
+          <div class="kpi-big blue">
+            <div class="kpi-big-lbl">Total Candidates</div>
+            <div class="kpi-big-num" id="k-total-cands">—</div>
+            <div class="kpi-big-sub">All recruiters combined</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid #27ae60;">
+            <div class="kpi-c-lbl" style="color:#27ae60;">Placed</div>
+            <div class="kpi-c-num" id="k-placed" style="color:#27ae60;">—</div>
+            <div class="kpi-c-sub">Total placements</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid #8e44ad;">
+            <div class="kpi-c-lbl" style="color:#8e44ad;">Scheduled</div>
+            <div class="kpi-c-num" id="k-scheduled" style="color:#8e44ad;">—</div>
+            <div class="kpi-c-sub">For interviews</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid var(--teal);">
+            <div class="kpi-c-lbl" style="color:var(--teal);">Submitted</div>
+            <div class="kpi-c-num" id="k-submitted" style="color:var(--teal);">—</div>
+            <div class="kpi-c-sub">Passed interview</div>
+          </div>
+          <div class="kpi-card" style="border-top:3px solid #1a5276;">
+            <div class="kpi-c-lbl" style="color:#1a5276;">Clients</div>
+            <div class="kpi-c-num" id="k-clients" style="color:#1a5276;">—</div>
+            <div class="kpi-c-sub">Registered companies</div>
+          </div>
+        </div>
+
+        <!-- RECRUITER REVENUE BREAKDOWN -->
+        <div class="section-divider"><div class="sd-line"></div><div class="sd-label">Recruiter Revenue Breakdown</div><div class="sd-line"></div></div>
+        <div class="rec-rev-grid" id="rec-rev-grid">
+          <div style="color:var(--text-muted);font-size:13px;padding:20px;">Connecting…</div>
+        </div>
+
+        <!-- ATTENDANCE TABLE -->
+        <div class="section-divider"><div class="sd-line"></div><div class="sd-label">Today's Full Attendance</div><div class="sd-line"></div></div>
+        <div class="tbl-wrap">
+          <div class="tbl-scroll">
+            <table>
+              <thead><tr>
+                <th>Staff Member</th><th>Role</th><th>Login</th>
+                <th>Logout</th><th>Breaks</th><th>Break Duration</th>
+                <th>Hours Worked</th><th>Status</th>
+              </tr></thead>
+              <tbody id="att-tbody"><tr><td colspan="8"><div class="empty"><p>Loading…</p></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /overview -->
+
+      <!-- ===== REVENUE VIEW ===== -->
+      <div class="view" id="view-revenue">
+        <div class="sec-hd">
+          <div><div class="sec-ttl">Revenue Tracker — All Periods</div><div class="sec-sub">Per recruiter breakdown with downloadable reports</div></div>
+          <div class="period-row">
+            <button class="period-btn active" id="rev-pb-week"  onclick="switchRevPeriod('week')">Week</button>
+            <button class="period-btn"        id="rev-pb-month" onclick="switchRevPeriod('month')">Month</button>
+            <button class="period-btn"        id="rev-pb-year"  onclick="switchRevPeriod('year')">Year</button>
+            <button class="period-btn"        id="rev-pb-all"   onclick="switchRevPeriod('all')">All Time</button>
+          </div>
+        </div>
+        <div class="kpi-row" id="rev-kpi-row"></div>
+        <div class="sec-hd" style="margin-top:4px;">
+          <div><div class="sec-ttl" style="font-size:15px;">Per Recruiter Revenue</div></div>
+          <button class="btn btn-teal" onclick="openChart('revenue')">📊 Chart View</button>
+        </div>
+        <div class="rec-rev-grid" id="rev-rec-grid"></div>
+        <div class="sec-hd">
+          <div><div class="sec-ttl" style="font-size:15px;">All Revenue Entries</div></div>
+          <button class="btn btn-teal" onclick="downloadRevExcel()">📥 Download Excel</button>
+        </div>
+        <div class="tbl-wrap">
+          <div class="tbl-scroll">
+            <table>
+              <thead><tr><th>SNO</th><th>Candidate</th><th>Recruiter</th><th>Role Placed</th><th>Client</th><th>Placement Date</th><th>Fee</th><th>Week</th><th>Month</th></tr></thead>
+              <tbody id="rev-entries-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== ATTENDANCE VIEW ===== -->
+      <div class="view" id="view-attendance">
+        <div class="sec-hd">
+          <div><div class="sec-ttl">Full Team Attendance</div><div class="sec-sub">All staff — live status, login/logout, break details · real-time</div></div>
+          <button class="btn btn-teal" onclick="downloadAttExcel()">📥 Download Excel</button>
+        </div>
+        <div class="kpi-row" id="att-kpi-row"></div>
+        <div class="tbl-wrap">
+          <div class="tbl-scroll">
+            <table>
+              <thead><tr><th>Staff Member</th><th>Role</th><th>Login</th><th>Logout</th><th>Breaks</th><th>Break Duration</th><th>Hours Worked</th><th>Status</th></tr></thead>
+              <tbody id="att-full-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== RECRUITERS VIEW ===== -->
+      <div class="view" id="view-recruiters">
+        <div class="sec-hd">
+          <div><div class="sec-ttl">Recruiters — All Candidates</div><div class="sec-sub">Complete candidate list per recruiter</div></div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-teal" onclick="openChart('recruiters')">📊 Chart</button>
+            <button class="btn btn-teal" style="background:#27ae60;" onclick="downloadRecExcel()">📥 Excel</button>
+          </div>
+        </div>
+        <div class="kpi-row" id="rec-kpi-row"></div>
+        <div class="tbl-wrap">
+          <div class="tbl-scroll">
+            <table>
+              <thead><tr><th>SNO</th><th>Candidate</th><th>Contact</th><th>Job</th><th>Status</th><th>Recruiter</th><th>Follow-up</th><th>Added</th></tr></thead>
+              <tbody id="rec-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== INTERVIEWER VIEW ===== -->
+      <div class="view" id="view-interviewer">
+        <div class="sec-hd">
+          <div><div class="sec-ttl">Interviewer Stats — Ramya</div><div class="sec-sub">Scheduled, walk-ins, submitted to HR</div></div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-teal" onclick="openChart('interviewer')">📊 Chart</button>
+            <button class="btn btn-teal" style="background:#27ae60;" onclick="downloadIntExcel()">📥 Excel</button>
+          </div>
+        </div>
+        <div class="kpi-row" id="int-kpi-row"></div>
+        <div class="tbl-wrap">
+          <div class="tbl-scroll">
+            <table>
+              <thead><tr><th>SNO</th><th>Candidate</th><th>Recruiter</th><th>Contact</th><th>Job</th><th>Interview Date</th><th>Status</th><th>Notes</th></tr></thead>
+              <tbody id="int-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PLACEMENT VIEW ===== -->
+      <div class="view" id="view-placement">
+        <div class="sec-hd">
+          <div><div class="sec-ttl">Placement / HR — Shree Harine</div><div class="sec-sub">Pipeline stages, BGV, training, placed candidates</div></div>
+          <button class="btn btn-teal" style="background:#27ae60;" onclick="downloadHRExcel()">📥 Excel</button>
+        </div>
+        <div class="kpi-row" id="pl-kpi-row"></div>
+        <div class="tbl-wrap">
+          <div class="tbl-scroll">
+            <table>
+              <thead><tr><th>SNO</th><th>Candidate</th><th>Recruiter</th><th>Country</th><th>Stage</th><th>Enrollment No</th><th>Payment</th><th>Placed At</th><th>Placed Date</th></tr></thead>
+              <tbody id="pl-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== DOWNLOADS VIEW ===== -->
+      <div class="view" id="view-downloads">
+        <div class="sec-hd">
+          <div><div class="sec-ttl">Download Reports</div><div class="sec-sub">Export all data as Excel files</div></div>
+        </div>
+        <div class="dl-grid">
+          <div class="dl-card" onclick="downloadRecExcel()">
+            <div class="dl-icon" style="background:#e4f5f4;">👥</div>
+            <div><div class="dl-card-title">Recruiters Report</div><div class="dl-card-sub">All candidates with status</div></div>
+          </div>
+          <div class="dl-card" onclick="downloadIntExcel()">
+            <div class="dl-icon" style="background:#f0eaff;">🎯</div>
+            <div><div class="dl-card-title">Interviewer Report</div><div class="dl-card-sub">Scheduled & submitted</div></div>
+          </div>
+          <div class="dl-card" onclick="downloadHRExcel()">
+            <div class="dl-icon" style="background:#e6f9ed;">🏢</div>
+            <div><div class="dl-card-title">HR / Placement Report</div><div class="dl-card-sub">Pipeline & placed candidates</div></div>
+          </div>
+          <div class="dl-card" onclick="downloadAttExcel()">
+            <div class="dl-icon" style="background:#e8eef8;">📋</div>
+            <div><div class="dl-card-title">Attendance Report</div><div class="dl-card-sub">Today's login/logout/breaks</div></div>
+          </div>
+          <div class="dl-card" onclick="downloadRevExcel()">
+            <div class="dl-icon" style="background:#fff8e6;">💰</div>
+            <div><div class="dl-card-title">Revenue Report</div><div class="dl-card-sub">All placement fees & turnover</div></div>
+          </div>
+          <div class="dl-card" onclick="downloadFullExcel()">
+            <div class="dl-icon" style="background:#fde8e8;">📊</div>
+            <div><div class="dl-card-title">Full Data Export</div><div class="dl-card-sub">All tables in one Excel file</div></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main-area -->
+</div><!-- /dash-inner -->
+
+<script>
+// =====================================================
+// SUPER ADMIN DASHBOARD — Real-Time via SSE
+// =====================================================
+
+const TOKEN = sessionStorage.getItem('crm_token') || '';
+let allCandidates  = [];
+let allClients     = [];
+let staffStatus    = [];
+let revenueData    = { entries: [], byRecruiter: [] };
+let overview       = {};
+let toastTm        = null;
+let chartInstance  = null;
+let curChartType   = 'revenue';
+let curChartPeriod = 'week';
+let revPeriod      = 'week';
+
+const FEE = 5000;
+
+const STAFF_IMGS = {
+  soundariya: 'WhatsApp Image 2026-04-03 at 10.09.47 AM.jpeg',
+  tharshini:  'WhatsApp Image 2026-04-03 at 11.06.00 AM.jpeg',
+  ramya:      'ramya.jpeg',
+  shreeharine:'WhatsApp Image 2026-04-07 at 10.04.42 AM.jpeg',
+};
+
+// ── SSE CONNECTION ────────────────────────────────────
+let sseSource = null;
+let sseReconnectTimer = null;
+let sseReconnectDelay = 3000;
+
+function connectSSE() {
+  if (sseSource) { sseSource.close(); sseSource = null; }
+  setSseStatus('connecting');
+
+  sseSource = new EventSource(`/api/superadmin/stream?token=${encodeURIComponent(TOKEN)}`);
+
+  sseSource.addEventListener('connected', () => {
+    setSseStatus('connected');
+    sseReconnectDelay = 3000;
+    clearTimeout(sseReconnectTimer);
+  });
+
+  // Full snapshot on connect (or any broad refresh)
+  sseSource.addEventListener('snapshot', (e) => {
+    const data = JSON.parse(e.data);
+    applySnapshot(data);
+    updateLastRefresh();
+  });
+
+  sseSource.addEventListener('refresh', (e) => {
+    const data = JSON.parse(e.data);
+    applySnapshot(data);
+    updateLastRefresh();
+    flashUpdateIndicator();
+  });
+
+  sseSource.onerror = () => {
+    setSseStatus('disconnected');
+    sseSource.close(); sseSource = null;
+    // Exponential backoff: 3s → 6s → 12s → max 30s
+    sseReconnectTimer = setTimeout(() => {
+      sseReconnectDelay = Math.min(sseReconnectDelay * 2, 30000);
+      connectSSE();
+    }, sseReconnectDelay);
+  };
+}
+
+function setSseStatus(state) {
+  const el    = document.getElementById('sse-status');
+  const dot   = document.getElementById('live-dot');
+  const label = document.getElementById('sse-label');
+  if (!el) return;
+  el.className = state;
+  dot.className = 'live-dot' + (state !== 'connected' ? ' disconnected' : '');
+  label.textContent = state === 'connected' ? 'Live' : state === 'connecting' ? 'Connecting…' : 'Reconnecting…';
+}
+
+function flashUpdateIndicator() {
+  // Briefly flash the turnover cards to show a live update came in
+  document.querySelectorAll('.turnover-card, .kpi-big, .kpi-card').forEach(el => {
+    el.classList.remove('just-updated');
+    void el.offsetWidth; // reflow
+    el.classList.add('just-updated');
+  });
+}
+
+// ── APPLY SNAPSHOT ────────────────────────────────────
+function applySnapshot(data) {
+  if (data.overview)        overview    = data.overview;
+  if (data.staff)           staffStatus = data.staff;
+  if (data.recruiterRevenue) revenueData.byRecruiter = data.recruiterRevenue;
+  renderAll();
+  // Re-render active sub-view if open
+  const activeView = document.querySelector('.view.active');
+  if (activeView) {
+    const name = activeView.id.replace('view-','');
+    if (name === 'attendance')  renderAttendanceView();
+    if (name === 'revenue')     renderRevenueView();
+  }
+}
+
+// ── MANUAL REFRESH ────────────────────────────────────
+async function manualRefresh() {
+  try {
+    const headers = { 
+      'x-session-token': TOKEN,
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    };
+    const [snapRes, candsRes, clientsRes, revRes] = await Promise.all([
+      fetch('/api/superadmin/overview',   { headers }),
+      fetch('/api/candidates',            { headers }),  // ← changed from /api/superadmin/candidates
+      fetch('/api/clients',               { headers }),
+      fetch(`/api/superadmin/revenue?period=${revPeriod}`, { headers }),
+    ]);
+    const [snap, cands, clients, rev] = await Promise.all([
+      snapRes.json(), candsRes.json(), clientsRes.json(), revRes.json()
+    ]);
+    if (snap.success)    { overview = snap.overview || {}; staffStatus = snap.staff || []; revenueData.byRecruiter = snap.recruiterRevenue || []; }
+    if (cands.success)   allCandidates = cands.candidates || [];
+    if (clients.success) allClients    = clients.clients  || [];
+    if (rev.success)     { revenueData.entries = rev.entries || []; if (rev.byRecruiter) revenueData.byRecruiter = rev.byRecruiter; }
+    renderAll();
+    updateLastRefresh();
+    showToast('Refreshed ✓', 'ok');
+  } catch(e) { showToast('Refresh failed — check connection.', 'err'); }
+}
+
+// ── INIT ─────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  updateClock();
+  setInterval(updateClock, 1000);
+  showView('overview');
+
+  // 1. Connect SSE for real-time push
+  connectSSE();
+
+  // 2. Load full datasets (candidates, clients, revenue) via HTTP once
+  await manualRefresh();
+
+  // 3. Refresh candidates+clients every 30s as fallback (SSE handles the rest)
+  setInterval(async () => {
+  try {
+    const headers = { 
+      'x-session-token': TOKEN,
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    };
+    const [c, cl] = await Promise.all([
+      fetch('/api/candidates', { headers }).then(r=>r.json()),
+      fetch('/api/clients',    { headers }).then(r=>r.json()),
+    ]);
+    if (c.success)  allCandidates = c.candidates || [];
+    if (cl.success) allClients    = cl.clients   || [];
+    renderKPIs();
+    renderRecruiterRevenueCards(document.getElementById('rec-rev-grid'));
+  } catch(e) {}
+}, 30000);
+});
+
+// ── RENDER ALL ─────────────────────────────────────────
+function renderAll() {
+  renderTurnover();
+  renderPresenceCards();
+  renderAttTable(document.getElementById('att-tbody'));
+  renderKPIs();
+  renderRecruiterRevenueCards(document.getElementById('rec-rev-grid'));
+}
+
+// ── TURNOVER CARDS ─────────────────────────────────────
+function renderTurnover() {
+  const now = new Date();
+  const monthName = now.toLocaleString('default', { month: 'long' });
+
+  const weekRev = overview.revenue_this_week  ?? calcRevFromCandidates('week');
+  const weekPl  = overview.placed_this_week   ?? countPlaced('week');
+  const monRev  = overview.revenue_this_month ?? calcRevFromCandidates('month');
+  const monPl   = overview.placed_this_month  ?? countPlaced('month');
+  const yearRev = overview.revenue_this_year  ?? calcRevFromCandidates('year');
+  const yearPl  = overview.placed_this_year   ?? countPlaced('year');
+
+  animateValue('tc-week',  '₹' + fmt(weekRev));
+  animateValue('tc-month', '₹' + fmt(monRev));
+  animateValue('tc-year',  '₹' + fmt(yearRev));
+  setEl('tc-week-pl',    weekPl + ' placement' + (weekPl !== 1 ? 's' : ''));
+  setEl('tc-month-name', monthName + ' ' + now.getFullYear());
+  setEl('tc-month-pl',   monPl + ' placement' + (monPl !== 1 ? 's' : ''));
+  setEl('tc-year-sub',   'Year ' + now.getFullYear());
+  setEl('tc-year-pl',    yearPl + ' placement' + (yearPl !== 1 ? 's' : ''));
+}
+
+function animateValue(id, newVal) {
+  const el = document.getElementById(id);
+  if (!el || el.textContent === newVal) return;
+  el.textContent = newVal;
+}
+
+function calcRevFromCandidates(period) { return countPlaced(period) * FEE; }
+
+function countPlaced(period) {
+  const now = new Date();
+  return allCandidates.filter(c => {
+    if (c.status !== 'placed') return false;
+    const d = new Date(c.placed_date || c.date);
+    if (isNaN(d)) return false;
+    if (period === 'week')  { const wa = new Date(now); wa.setDate(wa.getDate()-7); return d >= wa; }
+    if (period === 'month') return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
+    if (period === 'year')  return d.getFullYear()===now.getFullYear();
+    return true;
+  }).length;
+}
+
+// ── PRESENCE CARDS ─────────────────────────────────────
+function renderPresenceCards() {
+  const defs = [
+    { key:'soundariya', name:'Soundariya', role:'Recruiter',         match:['Sowndarya','Soundariya'] },
+    { key:'tharshini',  name:'Tharshini',  role:'Recruiter',         match:['Tharshini'] },
+    { key:'ramya',      name:'Ramya',       role:'Interviewer',       match:['Ramya'] },
+    { key:'shreeharine',name:'Shree Harine',role:'Placement Officer', match:['Shree Harine','Shreeharine'] },
+  ];
+
+  const adminStaff = staffStatus.filter(s => s.role === 'admin');
+  const online  = staffStatus.filter(s => s.liveStatus === 'online').length;
+  const onBreak = staffStatus.filter(s => s.liveStatus === 'on_break').length;
+  const absent  = staffStatus.filter(s => s.liveStatus === 'not_logged_in').length;
+
+  setEl('att-online-badge',  'Online: ' + online);
+  setEl('att-break-badge',   'Break: '  + onBreak);
+  setEl('att-absent-badge',  'Absent: ' + absent);
+  setEl('presence-sub',      online + ' online · ' + staffStatus.length + ' total staff · live via SSE');
+
+  const allDefs = [
+    ...defs,
+    ...adminStaff.map(a => ({ key: a.username, name: a.name, role: 'Admin', match: [a.name, a.username] }))
+  ];
+
+  const container = document.getElementById('presence-row');
+  container.innerHTML = allDefs.map(def => {
+    const rec = staffStatus.find(s => def.match.some(m => s.name?.toLowerCase().includes(m.toLowerCase()) || s.username?.toLowerCase().includes(m.toLowerCase())));
+    const st = rec?.liveStatus || 'not_logged_in';
+    const cfg = {
+      online:        { dot:'dot-online',  color:'#27ae60', lbl:'Online ✓' },
+      on_break:      { dot:'dot-break',   color:'#e67e22', lbl: rec?.breakType==='lunch'?'🍽 Lunch':'☕ Break' },
+      logged_out:    { dot:'dot-logout',  color:'#7f8c8d', lbl:'Logged Out' },
+      not_logged_in: { dot:'dot-offline', color:'#e74c3c', lbl:'Absent' },
+    }[st] || { dot:'dot-offline', color:'#e74c3c', lbl:'Absent' };
+
+    const img = STAFF_IMGS[def.key] || '';
+    return `<div class="presence-card ${st}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div class="pc-ava"><img src="${esc(img)}" alt="${esc(def.name)}" onerror="this.style.display='none';this.parentNode.textContent='${def.name.charAt(0)}'."></div>
+        <div><div class="pc-role-lbl">${esc(def.role)}</div><div class="pc-name">${esc(def.name)}</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:${cfg.color};margin-top:4px;">
+        <span class="${cfg.dot}"></span>${cfg.lbl}
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${rec?.loginTime ? '🕐 '+esc(rec.loginTime) : 'Not logged in today'}</div>
+      ${rec?.breakCount>0?`<div style="font-size:11px;color:var(--text-muted);">☕ ${rec.breakCount} break${rec.breakCount>1?'s':''} · ${rec.totalBreakMins} min</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ── ATTENDANCE TABLE ────────────────────────────────────
+function renderAttTable(tb) {
+  if (!tb) return;
+  if (!staffStatus.length) {
+    tb.innerHTML = '<tr><td colspan="8"><div class="empty"><p>No attendance data today.</p></div></td></tr>';
+    return;
+  }
+  const stMap = { online:['b-green','Online'], on_break:['b-orange','On Break'], logged_out:['b-gray','Logged Out'], not_logged_in:['b-red','Absent'] };
+  tb.innerHTML = staffStatus.map(s => {
+    const [bc,bl] = stMap[s.liveStatus] || ['b-gray','Unknown'];
+    const h = calcHours(s.loginTime, s.logoutTime, s.totalBreakMins);
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--mid-blue));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;">${esc(s.name?.charAt(0)||'?')}</div>
+        <div><div style="font-weight:700;font-size:13px;">${esc(s.name||s.username)}</div><div style="font-size:10px;color:var(--text-muted);">@${esc(s.username||'')}</div></div>
+      </div></td>
+      <td><span class="badge b-blue">${esc(s.role)}</span></td>
+      <td style="font-size:13px;font-weight:600;">${s.loginTime?'🕐 '+esc(s.loginTime):'<span style="color:var(--text-muted);">—</span>'}</td>
+      <td style="font-size:13px;">${s.logoutTime?'🚪 '+esc(s.logoutTime):'<span style="color:var(--text-muted);">—</span>'}</td>
+      <td style="font-size:12px;">${s.breakCount>0?s.breakCount+' break'+(s.breakCount>1?'s':''):'—'}</td>
+      <td style="font-size:12px;">${s.totalBreakMins>0?s.totalBreakMins+' min':'—'}</td>
+      <td style="font-size:12px;font-weight:600;">${h}</td>
+      <td><span class="badge ${bc}">${bl}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── KPIs ────────────────────────────────────────────────
+function renderKPIs() {
+  const total     = overview.total_candidates  ?? allCandidates.length;
+  const placed    = overview.total_placed      ?? allCandidates.filter(c=>c.status==='placed').length;
+  const scheduled = overview.total_scheduled   ?? allCandidates.filter(c=>c.status==='scheduled').length;
+  const submitted = overview.total_submitted   ?? allCandidates.filter(c=>c.status==='submitted').length;
+  const clients   = overview.total_clients     ?? allClients.length;
+
+  setEl('k-total-cands', total);
+  setEl('k-placed',      placed);
+  setEl('k-scheduled',   scheduled);
+  setEl('k-submitted',   submitted);
+  setEl('k-clients',     clients);
+}
+
+// ── RECRUITER REVENUE CARDS ─────────────────────────────
+function renderRecruiterRevenueCards(grid) {
+  if (!grid) return;
+  const recDefs = [
+    { name:'Soundariya', username:'rec001', keys:['Sowndarya','Soundariya'], img: STAFF_IMGS.soundariya },
+    { name:'Tharshini',  username:'rec002', keys:['Tharshini'],              img: STAFF_IMGS.tharshini  },
+  ];
+
+  grid.innerHTML = recDefs.map(def => {
+    const cands  = allCandidates.filter(c => def.keys.some(k => (c.recruiter_name||'').includes(k)));
+    const placed = cands.filter(c=>c.status==='placed').length;
+    const dbRec  = revenueData.byRecruiter.find(r => def.keys.some(k => (r.recruiter_name||'').includes(k)));
+
+    const revWeek  = dbRec?.revenue_this_week   ?? countPlacedByKeys(def.keys,'week') * FEE;
+    const revMonth = dbRec?.revenue_this_month  ?? countPlacedByKeys(def.keys,'month') * FEE;
+    const revYear  = dbRec?.revenue_this_year   ?? countPlacedByKeys(def.keys,'year') * FEE;
+    const totalRev = dbRec?.total_revenue       ?? placed * FEE;
+
+    const interested = cands.filter(c=>c.status==='interested').length;
+    const scheduled  = cands.filter(c=>c.status==='scheduled').length;
+    const submitted  = cands.filter(c=>c.status==='submitted').length;
+    const _n = new Date(); const _l = new Date(_n.getTime() - _n.getTimezoneOffset()*60000); const today = _l.toISOString().split('T')[0];
+    const todayAdded = cands.filter(c=>(c.date||"").split("T")[0]===today).length;
+
+    return `<div class="rec-rev-card">
+      <div class="rrc-header">
+        <div class="rrc-ava"><img src="${esc(def.img)}" alt="${esc(def.name)}" onerror="this.style.display='none';this.parentNode.textContent='${def.name.charAt(0)}'."></div>
+        <div>
+          <div class="rrc-name">${esc(def.name)}</div>
+          <div class="rrc-role">Recruiter · +${todayAdded} today</div>
+        </div>
+        <div style="margin-left:auto;text-align:right;">
+          <div style="font-size:18px;font-weight:700;color:#e4f5f4;">₹${fmt(totalRev)}</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;">Total Revenue</div>
+        </div>
+      </div>
+      <div class="rrc-body">
+        <div class="rrc-revenue">₹${fmt(totalRev)}</div>
+        <div class="rrc-sub">${placed} placed × ₹${fmt(FEE)}</div>
+        <div class="rrc-grid">
+          <div class="rrc-item"><div class="rrc-item-val" style="color:var(--teal);">${cands.length}</div><div class="rrc-item-lbl">Total</div></div>
+          <div class="rrc-item"><div class="rrc-item-val" style="color:#8e44ad;">${scheduled}</div><div class="rrc-item-lbl">Scheduled</div></div>
+          <div class="rrc-item"><div class="rrc-item-val" style="color:#27ae60;">${placed}</div><div class="rrc-item-lbl">Placed ✓</div></div>
+          <div class="rrc-item"><div class="rrc-item-val" style="color:#27ae60;">${interested}</div><div class="rrc-item-lbl">Interested</div></div>
+          <div class="rrc-item"><div class="rrc-item-val" style="color:var(--teal);">${submitted}</div><div class="rrc-item-lbl">Submitted</div></div>
+        </div>
+        <div class="rrc-period-row">
+          <div class="rrc-period"><div class="rrc-period-val">₹${fmt(revWeek)}</div><div class="rrc-period-lbl">This Week</div></div>
+          <div class="rrc-period"><div class="rrc-period-val">₹${fmt(revMonth)}</div><div class="rrc-period-lbl">This Month</div></div>
+          <div class="rrc-period"><div class="rrc-period-val">₹${fmt(revYear)}</div><div class="rrc-period-lbl">This Year</div></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function countPlacedByKeys(keys, period) {
+  const now = new Date();
+  return allCandidates.filter(c => {
+    if (c.status !== 'placed') return false;
+    if (!keys.some(k => (c.recruiter_name||'').includes(k))) return false;
+    const d = new Date(c.placed_date || c.date);
+    if (isNaN(d)) return false;
+    if (period === 'week')  { const wa = new Date(now); wa.setDate(wa.getDate()-7); return d >= wa; }
+    if (period === 'month') return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
+    if (period === 'year')  return d.getFullYear()===now.getFullYear();
+    return true;
+  }).length;
+}
+
+// ── REVENUE VIEW ────────────────────────────────────────
+async function switchRevPeriod(period) {
+  revPeriod = period;
+  ['week','month','year','all'].forEach(p => {
+    const btn = document.getElementById('rev-pb-'+p);
+    if (btn) btn.classList.toggle('active', p === period);
+  });
+  try {
+    const res  = await fetch(`/api/superadmin/revenue?period=${period}`, { headers: { 'x-session-token': TOKEN } });
+    const data = await res.json();
+    if (data.success) {
+      revenueData.entries     = data.entries || [];
+      revenueData.byRecruiter = data.byRecruiter || revenueData.byRecruiter;
+    }
+  } catch(e) {}
+  renderRevenueView();
+}
+
+function renderRevenueView() {
+  const totalRev = revenueData.entries.reduce((s,r) => s + parseFloat(r.fee_amount||0), 0);
+  const totalPl  = revenueData.entries.length;
+  document.getElementById('rev-kpi-row').innerHTML = `
+    <div class="kpi-big green"><div class="kpi-big-lbl">Total Revenue (${revPeriod})</div><div class="kpi-big-num">₹${fmt(totalRev)}</div><div class="kpi-big-sub">${totalPl} placements</div></div>
+    <div class="kpi-card" style="border-top:3px solid #27ae60;"><div class="kpi-c-lbl" style="color:#27ae60;">Placements</div><div class="kpi-c-num" style="color:#27ae60;">${totalPl}</div></div>
+    <div class="kpi-card" style="border-top:3px solid var(--teal);"><div class="kpi-c-lbl" style="color:var(--teal);">Avg/Placement</div><div class="kpi-c-num" style="color:var(--teal);">₹${fmt(totalPl ? totalRev/totalPl : 0)}</div></div>`;
+
+  renderRecruiterRevenueCards(document.getElementById('rev-rec-grid'));
+
+  const tb = document.getElementById('rev-entries-tbody');
+  if (!revenueData.entries.length) {
+    tb.innerHTML = '<tr><td colspan="9"><div class="empty"><p>No revenue entries for this period.</p></div></td></tr>';
+    return;
+  }
+  tb.innerHTML = revenueData.entries.map((r,i) => `<tr>
+    <td style="color:var(--text-muted);font-size:12px;">${i+1}</td>
+    <td><strong>${esc(r.candidate_name||'—')}</strong></td>
+    <td style="font-size:12px;">${esc(r.recruiter_name||'—')}</td>
+    <td style="font-size:12px;">${esc(r.role_placed||'—')}</td>
+    <td style="font-size:12px;">${esc(r.client_name||'—')}</td>
+    <td style="font-size:12px;">${r.placement_date?'📅 '+esc(r.placement_date):'—'}</td>
+    <td style="font-weight:700;color:#1a7a40;">₹${fmt(r.fee_amount||FEE)}</td>
+    <td style="font-size:12px;color:var(--text-muted);">W${r.week_number||'—'}</td>
+    <td style="font-size:12px;color:var(--text-muted);">${getMonthName(r.month_number)} ${r.year_number||''}</td>
+  </tr>`).join('');
+}
+
+// ── ATTENDANCE FULL VIEW ─────────────────────────────────
+function renderAttendanceView() {
+  const online   = staffStatus.filter(s=>s.liveStatus==='online').length;
+  const onBreak  = staffStatus.filter(s=>s.liveStatus==='on_break').length;
+  const logOut   = staffStatus.filter(s=>s.liveStatus==='logged_out').length;
+  const absent   = staffStatus.filter(s=>s.liveStatus==='not_logged_in').length;
+
+  document.getElementById('att-kpi-row').innerHTML = `
+    <div class="kpi-big blue"><div class="kpi-big-lbl">Total Staff</div><div class="kpi-big-num">${staffStatus.length}</div><div class="kpi-big-sub">Tracked today</div></div>
+    <div class="kpi-card" style="border-top:3px solid #27ae60;"><div class="kpi-c-lbl" style="color:#27ae60;">Online</div><div class="kpi-c-num" style="color:#27ae60;">${online}</div></div>
+    <div class="kpi-card" style="border-top:3px solid #e67e22;"><div class="kpi-c-lbl" style="color:#e67e22;">On Break</div><div class="kpi-c-num" style="color:#e67e22;">${onBreak}</div></div>
+    <div class="kpi-card" style="border-top:3px solid #7f8c8d;"><div class="kpi-c-lbl" style="color:#7f8c8d;">Logged Out</div><div class="kpi-c-num" style="color:#7f8c8d;">${logOut}</div></div>
+    <div class="kpi-card" style="border-top:3px solid #e74c3c;"><div class="kpi-c-lbl" style="color:#e74c3c;">Absent</div><div class="kpi-c-num" style="color:#e74c3c;">${absent}</div></div>`;
+
+  renderAttTable(document.getElementById('att-full-tbody'));
+}
+
+// ── RECRUITERS VIEW ─────────────────────────────────────
+function renderRecruitersView() {
+  const recDefs = [
+    { name:'Soundariya', keys:['Sowndarya','Soundariya'] },
+    { name:'Tharshini',  keys:['Tharshini'] },
+  ];
+  let totalAll = 0;
+  const kpis = recDefs.map(def => {
+    const cands = allCandidates.filter(c => def.keys.some(k=>(c.recruiter_name||'').includes(k)));
+    totalAll += cands.length;
+    return `<div class="kpi-card" style="border-top:3px solid var(--teal);"><div class="kpi-c-lbl" style="color:var(--teal);">${def.name}</div><div class="kpi-c-num" style="color:var(--teal);">${cands.length}</div><div class="kpi-c-sub">${cands.filter(c=>c.status==='placed').length} placed</div></div>`;
+  });
+  document.getElementById('rec-kpi-row').innerHTML =
+    `<div class="kpi-big blue"><div class="kpi-big-lbl">Total</div><div class="kpi-big-num">${totalAll}</div><div class="kpi-big-sub">All recruiters</div></div>` + kpis.join('');
+
+  const SL = { fresh:'Fresh',followups:'Follow-Up',interested:'Interested',rnr:'RNR',callback:'Callback',notinterested:'Not Interested',scheduled:'Scheduled',submitted:'Submitted',placed:'Placed' };
+  const SB = { fresh:'b-gray',followups:'b-teal',interested:'b-green',rnr:'b-orange',callback:'b-blue',notinterested:'b-red',scheduled:'b-purple',submitted:'b-teal',placed:'b-green' };
+
+  const tb = document.getElementById('rec-tbody');
+  if (!allCandidates.length) { tb.innerHTML = '<tr><td colspan="8"><div class="empty"><p>No candidates.</p></div></td></tr>'; return; }
+  tb.innerHTML = allCandidates.map((c,i) => `<tr>
+    <td style="color:var(--text-muted);font-size:12px;">${i+1}</td>
+    <td><strong>${esc(c.name)}</strong><br><span style="font-size:11px;color:var(--text-muted);">${esc(c.email||'')}</span></td>
+    <td style="font-size:12px;">${esc(c.contact||'—')}</td>
+    <td style="font-size:12px;">${esc(c.job||'—')}</td>
+    <td><span class="badge ${SB[c.status]||'b-gray'}">${SL[c.status]||c.status}</span></td>
+    <td style="font-size:12px;">${esc(c.recruiter_name||'—')}</td>
+    <td style="font-size:12px;">${c.followupDate?'📅 '+esc(c.followupDate):'—'}</td>
+    <td style="font-size:12px;color:var(--text-muted);">${esc(c.date||'')}</td>
+  </tr>`).join('');
+}
+
+// ── INTERVIEWER VIEW ─────────────────────────────────────
+function renderInterviewerView() {
+  const scheduled = allCandidates.filter(c=>c.status==='scheduled');
+  const submitted  = allCandidates.filter(c=>c.status==='submitted');
+  const now = new Date();
+  const isWeek = c => { const d=new Date(c.date); const wa=new Date(now); wa.setDate(wa.getDate()-7); return d>=wa; };
+  const isMon  = c => { const d=new Date(c.date); return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear(); };
+
+  document.getElementById('int-kpi-row').innerHTML = `
+    <div class="kpi-big blue"><div class="kpi-big-lbl">Total Scheduled</div><div class="kpi-big-num">${scheduled.length}</div></div>
+    <div class="kpi-big teal"><div class="kpi-big-lbl">Submitted to HR</div><div class="kpi-big-num">${submitted.length}</div></div>
+    <div class="kpi-card" style="border-top:3px solid #8e44ad;"><div class="kpi-c-lbl" style="color:#8e44ad;">Sched — This Week</div><div class="kpi-c-num" style="color:#8e44ad;">${scheduled.filter(isWeek).length}</div></div>
+    <div class="kpi-card" style="border-top:3px solid #8e44ad;"><div class="kpi-c-lbl" style="color:#8e44ad;">Sched — This Month</div><div class="kpi-c-num" style="color:#8e44ad;">${scheduled.filter(isMon).length}</div></div>
+    <div class="kpi-card" style="border-top:3px solid var(--teal);"><div class="kpi-c-lbl" style="color:var(--teal);">Subm — This Month</div><div class="kpi-c-num" style="color:var(--teal);">${submitted.filter(isMon).length}</div></div>`;
+
+  const all = [...scheduled, ...submitted];
+  const tb = document.getElementById('int-tbody');
+  if (!all.length) { tb.innerHTML = '<tr><td colspan="8"><div class="empty"><p>No interview data.</p></div></td></tr>'; return; }
+  tb.innerHTML = all.map((c,i) => `<tr>
+    <td style="color:var(--text-muted);font-size:12px;">${i+1}</td>
+    <td><strong>${esc(c.name)}</strong></td>
+    <td style="font-size:12px;">${esc(c.recruiter_name||'—')}</td>
+    <td style="font-size:12px;">${esc(c.contact||'—')}</td>
+    <td style="font-size:12px;">${esc(c.job||'—')}</td>
+    <td style="font-size:12px;">${c.followupDate?'📅 '+esc(c.followupDate):'—'}</td>
+    <td><span class="badge ${c.status==='submitted'?'b-green':'b-purple'}">${c.status==='submitted'?'Submitted to HR':'Scheduled'}</span></td>
+    <td style="font-size:11px;max-width:140px;color:var(--text-muted);">${esc((c.interviewer_notes||c.notes||'').substring(0,50))}</td>
+  </tr>`).join('');
+}
+
+// ── PLACEMENT VIEW ───────────────────────────────────────
+function renderPlacementView() {
+  const placed    = allCandidates.filter(c=>c.status==='placed');
+  const submitted = allCandidates.filter(c=>c.status==='submitted');
+  const pipeline  = allCandidates.filter(c=>['submitted','payment_pending','reg_pending','placement','placed'].includes(c.status));
+
+  document.getElementById('pl-kpi-row').innerHTML = `
+    <div class="kpi-big green"><div class="kpi-big-lbl">Revenue (Placements)</div><div class="kpi-big-num">₹${fmt(placed.length * FEE)}</div><div class="kpi-big-sub">${placed.length} candidates placed</div></div>
+    <div class="kpi-card" style="border-top:3px solid #27ae60;"><div class="kpi-c-lbl" style="color:#27ae60;">Placed</div><div class="kpi-c-num" style="color:#27ae60;">${placed.length}</div></div>
+    <div class="kpi-card" style="border-top:3px solid var(--teal);"><div class="kpi-c-lbl" style="color:var(--teal);">In Pipeline</div><div class="kpi-c-num" style="color:var(--teal);">${pipeline.length}</div></div>
+    <div class="kpi-card" style="border-top:3px solid #8e44ad;"><div class="kpi-c-lbl" style="color:#8e44ad;">Submitted</div><div class="kpi-c-num" style="color:#8e44ad;">${submitted.length}</div></div>`;
+
+  const SB = { submitted:'b-teal',payment_pending:'b-orange',reg_pending:'b-blue',placement:'b-purple',placed:'b-green' };
+  const SL = { submitted:'Submitted',payment_pending:'Payment Pending',reg_pending:'Reg Pending',placement:'In Placement',placed:'Placed ✓' };
+
+  const tb = document.getElementById('pl-tbody');
+  if (!pipeline.length) { tb.innerHTML = '<tr><td colspan="9"><div class="empty"><p>No placement data.</p></div></td></tr>'; return; }
+  tb.innerHTML = pipeline.map((c,i) => `<tr>
+    <td style="color:var(--text-muted);font-size:12px;">${i+1}</td>
+    <td><strong>${esc(c.name)}</strong></td>
+    <td style="font-size:12px;">${esc(c.recruiter_name||'—')}</td>
+    <td><span class="badge b-teal">${esc(c.preferred_country||'—')}</span></td>
+    <td><span class="badge ${SB[c.status]||'b-gray'}">${SL[c.status]||c.status}</span></td>
+    <td style="font-size:12px;color:var(--text-muted);">${esc(c.enrollment_no||'—')}</td>
+    <td style="font-size:12px;">${c.payment_amount?'₹'+esc(c.payment_amount):c.payment_status?esc(c.payment_status):'—'}</td>
+    <td style="font-size:12px;font-weight:600;color:#27ae60;">${esc(c.placed_company||'—')}</td>
+    <td style="font-size:12px;">${c.placed_date?'📅 '+esc(c.placed_date):'—'}</td>
+  </tr>`).join('');
+}
+
+// ── CHART MODAL ──────────────────────────────────────────
+function openChart(type) {
+  curChartType = type; curChartPeriod = 'week';
+  ['week','month','year'].forEach(p => document.getElementById('pb-'+p)?.classList.toggle('active', p==='week'));
+  const titles = { revenue:'Revenue — Per Recruiter', recruiters:'Recruiter — Candidate Funnel', interviewer:'Interviewer — Scheduled vs Submitted' };
+  setEl('chart-title', titles[type] || 'Report');
+  setEl('chart-sub',   'Data breakdown · toggle period above');
+  document.getElementById('chart-overlay').classList.add('open');
+  renderChart(type, 'week');
+}
+function closeChart() {
+  document.getElementById('chart-overlay').classList.remove('open');
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+}
+function switchChartPeriod(period) {
+  curChartPeriod = period;
+  ['week','month','year'].forEach(p => document.getElementById('pb-'+p)?.classList.toggle('active', p===period));
+  renderChart(curChartType, period);
+}
+function renderChart(type, period) {
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+  const canvas = document.getElementById('modalChart');
+  let labels=[], datasets=[], tableData=[];
+  const recDefs = [
+    { name:'Soundariya', keys:['Sowndarya','Soundariya'] },
+    { name:'Tharshini',  keys:['Tharshini'] },
+  ];
+  if (type === 'revenue') {
+    labels = recDefs.map(d=>d.name);
+    const chosen = recDefs.map(d => countPlacedByKeys(d.keys, period) * FEE);
+    datasets = [{ label:'Revenue (₹)', data:chosen, backgroundColor:['#1F9A94CC','#162E5ACC'], borderColor:['#1F9A94','#162E5A'], borderWidth:2, borderRadius:6 }];
+    tableData = labels.map((l,i) => ({ label:l, value:'₹'+fmt(chosen[i]) }));
+  } else if (type === 'recruiters') {
+    const statuses = ['fresh','followups','interested','notinterested','rnr','scheduled','submitted','placed'];
+    const statusLabels = ['Fresh','Follow-ups','Interested','Not Interested','RNR','Scheduled','Submitted','Placed'];
+    labels = statusLabels;
+    datasets = recDefs.map((def,di) => ({
+      label: def.name,
+      data: statuses.map(s => allCandidates.filter(c=>def.keys.some(k=>(c.recruiter_name||'').includes(k))&&c.status===s).length),
+      backgroundColor: (di===0?'#1F9A94':'#162E5A')+'CC',
+      borderColor: di===0?'#1F9A94':'#162E5A',
+      borderWidth:2, borderRadius:4,
+    }));
+    tableData = labels.map((l,i) => ({ label:l, value: datasets.map(d=>d.data[i]).join(' / ') }));
+  } else if (type === 'interviewer') {
+    const now = new Date();
+    const filt = (arr) => {
+      if (period==='week')  { const wa=new Date(now); wa.setDate(wa.getDate()-7); return arr.filter(c=>new Date(c.date)>=wa).length; }
+      if (period==='month') return arr.filter(c=>{const d=new Date(c.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();}).length;
+      return arr.length;
+    };
+    const vals = [filt(allCandidates.filter(c=>c.status==='scheduled')), filt(allCandidates.filter(c=>c.status==='submitted'))];
+    labels = ['Scheduled','Submitted to HR'];
+    datasets = [{ label:'Candidates', data:vals, backgroundColor:['#8e44adCC','#1F9A94CC'], borderColor:['#8e44ad','#1F9A94'], borderWidth:2, borderRadius:6 }];
+    tableData = labels.map((l,i)=>({label:l,value:vals[i]}));
+  }
+  chartInstance = new Chart(canvas.getContext('2d'), {
+    type: 'bar', data: { labels, datasets },
+    options: { responsive:true, maintainAspectRatio:true, plugins:{ legend:{ display: datasets.length>1 } }, scales:{ y:{ beginAtZero:true, ticks:{precision:0}, grid:{color:'#e4eaf2'} }, x:{ grid:{display:false} } } }
+  });
+  document.getElementById('chart-data-table').innerHTML = `
+    <div style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Data</div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead><tr style="background:var(--bg-role);">
+        <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-tag);border-bottom:1px solid var(--border-div);">Label</th>
+        <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-tag);border-bottom:1px solid var(--border-div);">Value</th>
+      </tr></thead>
+      <tbody>${tableData.map(r=>`<tr><td style="padding:7px 12px;border-bottom:1px solid var(--border-div);">${esc(r.label)}</td><td style="padding:7px 12px;border-bottom:1px solid var(--border-div);text-align:right;font-weight:700;">${esc(String(r.value))}</td></tr>`).join('')}</tbody>
+    </table>`;
+}
+function downloadChartExcel() {
+  const rows = [];
+  if (chartInstance) {
+    chartInstance.data.labels.forEach((lbl, i) => {
+      const row = { Label: lbl };
+      chartInstance.data.datasets.forEach(ds => { row[ds.label] = ds.data[i]; });
+      rows.push(row);
+    });
+  }
+  downloadExcel(rows, (document.getElementById('chart-title')?.textContent||'Chart').replace(/\s+/g,'_'));
+}
+function downloadChartPNG() {
+  const a = document.createElement('a');
+  a.href = document.getElementById('modalChart').toDataURL('image/png');
+  a.download = (document.getElementById('chart-title')?.textContent||'Chart').replace(/\s+/g,'_') + '.png';
+  a.click();
+  showToast('Chart PNG downloaded ✓', 'ok');
+}
+
+// ── EXCEL DOWNLOADS ──────────────────────────────────────
+function downloadRecExcel() {
+  downloadExcel(allCandidates.map((c,i) => ({
+    'SNO':i+1,'Name':c.name||'','Contact':c.contact||'','Email':c.email||'',
+    'Job':c.job||'','Status':c.status||'','Recruiter':c.recruiter_name||'',
+    'Follow-up Date':c.followupDate||'','Added Date':c.date||'','Notes':(c.notes||'').substring(0,80),
+  })), `Recruiters_Report_${dateStr()}`);
+}
+function downloadIntExcel() {
+  downloadExcel(allCandidates.filter(c=>c.status==='scheduled'||c.status==='submitted').map((c,i) => ({
+    'SNO':i+1,'Name':c.name||'','Contact':c.contact||'','Email':c.email||'',
+    'Job':c.job||'','Status':c.status||'','Recruiter':c.recruiter_name||'',
+    'Interview Date':c.followupDate||'','Submitted Date':c.submitted_date||'',
+    'Interviewer Notes':(c.interviewer_notes||'').substring(0,80),
+  })), `Interviewer_Report_${dateStr()}`);
+}
+function downloadHRExcel() {
+  downloadExcel(allCandidates.filter(c=>['submitted','payment_pending','reg_pending','placement','placed'].includes(c.status)).map((c,i) => ({
+    'SNO':i+1,'Name':c.name||'','Contact':c.contact||'','Email':c.email||'',
+    'Job':c.job||'','Status':c.status||'','Recruiter':c.recruiter_name||'',
+    'Country':c.preferred_country||'','Enrollment No':c.enrollment_no||'',
+    'Payment':c.payment_amount||'','Payment Status':c.payment_status||'',
+    'Placed Company':c.placed_company||'','Placed Date':c.placed_date||'',
+  })), `HR_Placement_Report_${dateStr()}`);
+}
+function downloadAttExcel() {
+  downloadExcel(staffStatus.map((s,i) => ({
+    'SNO':i+1,'Name':s.name||s.username||'','Role':s.role||'',
+    'Login Time':s.loginTime||'','Logout Time':s.logoutTime||'',
+    'Breaks':s.breakCount||0,'Break Duration (min)':s.totalBreakMins||0,
+    'Hours Worked':calcHours(s.loginTime,s.logoutTime,s.totalBreakMins),'Status':s.liveStatus||'',
+  })), `Attendance_Report_${dateStr()}`);
+}
+function downloadRevExcel() {
+  const rows = revenueData.entries.length
+    ? revenueData.entries.map((r,i) => ({'SNO':i+1,'Candidate':r.candidate_name||'','Recruiter':r.recruiter_name||'','Role Placed':r.role_placed||'','Client':r.client_name||'','Fee (₹)':r.fee_amount||FEE,'Placement Date':r.placement_date||'','Week':'W'+(r.week_number||''),'Month':getMonthName(r.month_number),'Year':r.year_number||''}))
+    : allCandidates.filter(c=>c.status==='placed').map((c,i) => ({'SNO':i+1,'Candidate':c.name||'','Recruiter':c.recruiter_name||'','Job':c.job||'','Fee (₹)':FEE,'Placement Date':c.placed_date||c.date||''}));
+  downloadExcel(rows, `Revenue_Report_${dateStr()}`);
+}
+function downloadFullExcel() {
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(allCandidates.map((c,i)=>({SNO:i+1,Name:c.name||'',Contact:c.contact||'',Email:c.email||'',Job:c.job||'',Status:c.status||'',Recruiter:c.recruiter_name||''}))), 'Candidates');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(staffStatus.map((s,i)=>({SNO:i+1,Name:s.name||'',Role:s.role||'',Login:s.loginTime||'',Logout:s.logoutTime||'',BreakMins:s.totalBreakMins||0,Status:s.liveStatus||''}))), 'Attendance');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(allCandidates.filter(c=>c.status==='placed').map((c,i)=>({SNO:i+1,Candidate:c.name||'',Recruiter:c.recruiter_name||'',Job:c.job||'',' Fee (₹)':FEE,Date:c.placed_date||c.date||''}))||[{Note:'No placements yet'}]), 'Revenue');
+  XLSX.writeFile(wb, `JobSync_Full_Export_${dateStr()}.xlsx`);
+  showToast('Full export downloaded ✓', 'ok');
+}
+function downloadExcel(rows, filename) {
+  if (!rows.length) { showToast('No data to download.', 'err'); return; }
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = Object.keys(rows[0]||{}).map(k => ({ wch: Math.max(k.length+2, 15) }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Report');
+  XLSX.writeFile(wb, filename + '.xlsx');
+  showToast(`${rows.length} rows downloaded ✓`, 'ok');
+}
+
+// ── VIEW ROUTING ──────────────────────────────────────────
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const el = document.getElementById('view-'+name);
+  if (el) el.classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(x => x.classList.remove('active'));
+  const nav = document.getElementById('nav-'+name);
+  if (nav) nav.classList.add('active');
+  if (name === 'revenue')     renderRevenueView();
+  if (name === 'attendance')  renderAttendanceView();
+  if (name === 'recruiters')  renderRecruitersView();
+  if (name === 'interviewer') renderInterviewerView();
+  if (name === 'placement')   renderPlacementView();
+}
+
+// ── HELPERS ───────────────────────────────────────────────
+function calcHours(login, logout, breakMins) {
+  if (!login) return '—';
+  try {
+    const pt = t => { const [time,ap]=t.split(' '); let [h,m]=time.split(':').map(Number); if(ap==='PM'&&h!==12)h+=12; if(ap==='AM'&&h===12)h=0; return h*60+m; };
+    const s = pt(login);
+    const e = logout ? pt(logout) : (new Date().getHours()*60+new Date().getMinutes());
+    const w = Math.max(0, e - s - (breakMins||0));
+    return `${Math.floor(w/60)}h ${w%60}m`;
+  } catch(e) { return '—'; }
+}
+function fmt(n) {
+  const num = parseFloat(n||0);
+  if (num >= 10000000) return (num/10000000).toFixed(1) + ' Cr';
+  if (num >= 100000)   return (num/100000).toFixed(1)   + ' L';
+  return num.toLocaleString('en-IN');
+}
+function getMonthName(n) { return ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(n)||0] || '—'; }
+function dateStr() { return new Date().toISOString().split('T')[0]; }
+function updateClock() {
+  const now = new Date();
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const mons = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+  const ap = h>=12?'PM':'AM'; h=h%12||12;
+  const el = document.getElementById('tb-datetime');
+  if (el) el.textContent = days[now.getDay()]+', '+now.getDate()+' '+mons[now.getMonth()]+' '+now.getFullYear()+'  ·  '+pad(h)+':'+pad(m)+':'+pad(s)+' '+ap;
+  const greet = document.getElementById('tb-greeting');
+  if (greet) { const hr=new Date().getHours(); greet.textContent=(hr<12?'Good Morning, ':hr<16?'Good Afternoon, ':'Good Evening, ')+'Super Admin!'; }
+}
+function updateLastRefresh() {
+  const now=new Date(), el=document.getElementById('last-refresh');
+  if (el) el.textContent='Updated: '+pad(now.getHours()%12||12)+':'+pad(now.getMinutes())+' '+(now.getHours()>=12?'PM':'AM');
+}
+function doLogout() {
+  if (confirm('Logout from Super Admin?')) {
+    fetch('/api/auth/logout', { method:'POST', headers:{'x-session-token':TOKEN} });
+    sessionStorage.clear();
+    window.location.href = 'login.html';
+  }
+}
+function setEl(id,v){ const el=document.getElementById(id); if(el) el.textContent=v; }
+function pad(n){ return String(n).padStart(2,'0'); }
+function esc(s){ if(!s)return''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function showToast(msg,type){ const t=document.getElementById('toast'); if(!t)return; t.textContent=msg; t.className='show'+(type?' '+type:''); clearTimeout(toastTm); toastTm=setTimeout(()=>t.classList.remove('show'),2800); }
+</script>
+</body>
+</html>
